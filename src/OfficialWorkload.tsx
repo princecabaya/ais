@@ -215,7 +215,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   }).sort((a,b)=>a.section.localeCompare(b.section)||a.code.localeCompare(b.code));
  },[courses,offerings,sections,venues,meetings,requests,classifications,selectedFaculty,term?.id]);
  const initialDetails=detailRows.find(d=>d.faculty_id===selectedFaculty&&d.academic_term_id===term?.id);
- const details:Record<string,string>={};for(const k of FIELDS)details[k]=detailDraft[k]??String(initialDetails?.[k]??'');
+ const details:Record<string,string>={};for(const k of FIELDS){const v=detailDraft[k]??String(initialDetails?.[k]??'');details[k]=WORKLOAD_GROUPS.some(g=>g.details===k||g.time===k||g.day===k)&&v==='0'?'':v;}
  const selectedRow=rows.find(r=>String(r.id)===courseDraft.id);
  function pickRow(id:number){
   const r=rows.find(x=>x.id===id);if(!r)return;
