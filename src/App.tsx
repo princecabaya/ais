@@ -202,7 +202,7 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className={session && profile ? "app app--signed-in" : "app"}>
       <header>
         <div className="brand">
           <div className="logo-wrap">
