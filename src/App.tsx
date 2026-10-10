@@ -5,6 +5,7 @@ import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
 import { GeneralInformation } from './GeneralInformation';
+import { AdminScheduleReports } from './AdminScheduleReports';
 import { FacultyAvailability } from './FacultyAvailability';
 import { SchedulePreview } from './SchedulePreview';
 import { RoomScheduling } from './RoomScheduling';
@@ -307,6 +308,7 @@ export function App() {
                   {id:'scheduling',label:'4. Schedule & Rooms',icon:CalendarDays},
                   {id:'workload',label:'5. Faculty Workload',icon:ClipboardList},
                   ...(profile.role==='admin' ? [
+                    {id:'reports',label:'Admin: Schedule Reports',icon:CalendarDays},
                     {id:'approval',label:'Admin: Approvals',icon:ShieldCheck},
                     {id:'semester',label:'Admin: Semester',icon:CalendarDays},
                     {id:'curriculum',label:'Admin: Curricula',icon:BookOpen},
@@ -329,6 +331,7 @@ export function App() {
               {workspaceTab === 'availability' && <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
               {workspaceTab === 'scheduling' && <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
               {workspaceTab === 'workload' && <OfficialWorkload facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {profile.role === 'admin' && workspaceTab === 'reports' && <AdminScheduleReports />}
               {profile.role === 'admin' && workspaceTab === 'approval' && <AdministratorApproval />}
               {profile.role === 'admin' && workspaceTab === 'semester' && <AcademicTermSettings />}
               {profile.role === 'admin' && workspaceTab === 'curriculum' && <CurriculumManagement />}
