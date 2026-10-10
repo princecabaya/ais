@@ -586,3 +586,19 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .publication-readiness{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:1rem 0}
 .publication-readiness p{background:#eef5fc;border-radius:.7rem;padding:.8rem;margin:0;color:#254e75}
 @media(max-width:760px){.admin-approval-columns,.publication-readiness{grid-template-columns:1fr}}
+
+
+/* Phase 2F · Official Word workload exports */
+.official-workload{background:linear-gradient(180deg,#fff,#fff8ee)}
+.official-workload h2{color:#184d7b}
+.workload-select{max-width:630px;margin:1rem 0}
+.workload-edit,.workload-download{border:1px solid #f0d6bf;border-radius:1rem;background:#fff7ef;padding:1.2rem;margin:1rem 0;display:grid;gap:1rem}
+.workload-edit h3,.workload-download h3{margin:0;color:#1d537f}
+.workload-edit p,.workload-download p{margin:.2rem 0;color:#4f718d}
+.workload-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.9rem}
+.workload-fields label{font-size:.84rem}
+.workload-download{background:#eef6ff;border-color:#d7e7f7}
+.workload-download input[type=file]{background:#fff}
+.workload-download button{justify-self:start}
+.official-workload .curriculum-table td p{margin:.3rem 0 0;color:#597792;font-size:.82rem}
+@media(max-width:650px){.workload-fields{grid-template-columns:1fr}.workload-download button{justify-self:stretch}}
