@@ -453,3 +453,32 @@ footer span { color: var(--orange-700); font-weight: 700; }
   .brand-logo { width: 58px; height: 58px; }
   .hero-logo { width: 50px; height: 50px; }
 }
+
+
+/* Phase 2: curriculum management */
+.curriculum-module{margin:1rem 0;background:linear-gradient(180deg,#fff,#fffaf4)}
+.curriculum-heading{display:flex;justify-content:space-between;align-items:start;gap:1rem}
+.curriculum-heading h2{margin:.5rem 0;color:#173b60}
+.curriculum-heading p,.curriculum-note{color:#667e96;margin:.5rem 0 1rem}
+.curriculum-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.75rem;margin:1rem 0}
+.curriculum-metrics>div{background:#fff1e2;border:1px solid #f5d7bd;border-radius:1rem;padding:1rem;display:grid;gap:.25rem}
+.curriculum-metrics strong{color:#cc691f;font-size:1.65rem;line-height:1}
+.curriculum-metrics span{color:#486785;font-size:.85rem}
+.curriculum-tabs{display:flex;gap:.5rem;flex-wrap:wrap;border-bottom:1px solid #dbe6ef;padding-bottom:.75rem;margin:1rem 0}
+.curriculum-tab{border:1px solid #dae4ef;background:#fff;color:#184873;padding:.6rem .8rem;border-radius:.75rem;font-weight:700}
+.curriculum-tab.selected{background:#225f95;color:#fff}
+.curriculum-filters{display:grid;grid-template-columns:minmax(0,2fr) 1fr 1fr;gap:1rem;margin:1rem 0}
+.curriculum-table-wrap{overflow:auto;max-height:520px;border:1px solid #dbe5ef;border-radius:1rem;background:#fff}
+.curriculum-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.curriculum-table th{text-align:left;color:#173b60;background:#e9f2fb;position:sticky;top:0;z-index:1}
+.curriculum-table th,.curriculum-table td{padding:.8rem;vertical-align:top;border-bottom:1px solid #e6edf3}
+.curriculum-table tbody tr:nth-child(even){background:#fffaf6}
+.curriculum-table td:first-child{white-space:nowrap}
+.curriculum-review{display:grid;gap:.65rem}
+.curriculum-review-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;background:#fff3e9;border-radius:1rem;border:1px solid #f1dac7}
+.curriculum-review-row p{font-size:.86rem;margin:.2rem 0;color:#486785}
+.curriculum-review-row small{color:#b45d19}
+.curriculum-correction{margin:1rem 0;padding:1rem;border:1px solid #f3d5bc;border-radius:1rem;background:#fff7f0}
+.curriculum-correction h3{margin:0}
+.curriculum-actions{display:flex;gap:1rem;flex-wrap:wrap}
+@media(max-width:700px){.curriculum-heading,.curriculum-review-row{flex-direction:column;align-items:stretch}.curriculum-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.curriculum-filters{grid-template-columns:1fr}}
