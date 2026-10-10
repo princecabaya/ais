@@ -103,6 +103,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
  const chosenSection=chosenOffering?sectionById.get(chosenOffering.class_section_id):undefined;
  const timeLabel=(r:Request)=>{
   if(!r.preferred_pattern||r.preferred_start_minute===null)return 'No meeting preference recorded';
+  if(r.preferred_pattern==='FIELD')return 'Field Study / Internship · no room required';
   const days=r.preferred_pattern==='MW'?'Mon/Wed':r.preferred_pattern==='TTH'?'Tue/Thu':r.preferred_pattern==='NSTP'?'Friday':['','Monday','Tuesday','Wednesday','Thursday','Friday'][r.preferred_pathfit_weekday||0]||'Weekday';
   const h=(n:number)=>{const hr=Math.floor(n/60);return ((hr+11)%12+1)+':'+String(n%60).padStart(2,'0')+(hr>=12?' PM':' AM')};
   return days+' · '+h(r.preferred_start_minute)+' · '+(venues.find(v=>v.id===r.preferred_venue_id)?.name||'Venue');
