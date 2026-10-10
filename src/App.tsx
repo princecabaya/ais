@@ -6,6 +6,7 @@ import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
 import { FacultyAvailability } from './FacultyAvailability';
 import { RoomScheduling } from './RoomScheduling';
+import { AdministratorApproval } from './AdministratorApproval';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -294,6 +295,7 @@ export function App() {
             <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             {profile.role === 'admin' && (
               <>
+              <AdministratorApproval />
               <CurriculumManagement />
               <div className="panel admin">
                 <div className="iconhead"><ShieldCheck /><span>Administrator · Faculty authorization</span></div>
