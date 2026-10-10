@@ -15,7 +15,7 @@ type Audit={id:number;action:string;justification:string;recorded_at:string};
 const WEEKDAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const STARTS=[450,540,630,780,870,960,1050];
 const clock=(n:number)=>{const hour=Math.floor(n/60);return `${((hour+11)%12)+1}:${String(n%60).padStart(2,'0')} ${hour>=12?'PM':'AM'}`};
-const patternLabel=(p:Proposal)=>p.meeting_pattern==='MW'?'Monday & Wednesday':p.meeting_pattern==='TTH'?'Tuesday & Thursday':p.meeting_pattern==='NSTP'?'Friday':WEEKDAYS[(p.pathfit_weekday??1)-1];
+const patternLabel=(p:Proposal)=>p.meeting_pattern==='FIELD'?'Field placement (no room or fixed class)':p.meeting_pattern==='MW'?'Monday & Wednesday':p.meeting_pattern==='TTH'?'Tuesday & Thursday':p.meeting_pattern==='NSTP'?'Friday':WEEKDAYS[(p.pathfit_weekday??1)-1];
 function coursePattern(code:string,units:number|null){const c=code.toUpperCase().replace(/\s+/g,'');return c.startsWith('PATHFIT')?'PATHFIT':c.startsWith('NSTP')?'NSTP':units===3?'MW':'UNSUPPORTED';}
 
 export function AdministratorApproval(){
@@ -147,13 +147,13 @@ export function AdministratorApproval(){
   {loading?<p>Loading administrative records…</p>:tab==='overview'?<>
    <div className="admin-approval-columns">
     <div><h3>Pending course allocations</h3>{pendingAssignments.length?pendingAssignments.map(r=><div className="admin-review-item" key={r.id}><strong>{courseText(r.course_offering_id)}</strong><p>{profName(r.faculty_id)} · Preference #{r.preference_rank}</p><small>{r.motivation||'No qualification statement supplied'}</small></div>):<p>No outstanding course requests.</p>}<p className="curriculum-note">Approve or reject these in Course Selection → Admin review. Qualifications are advisory; the administrator makes the decision.</p></div>
-    <div><h3>Pending room schedules</h3>{pendingSchedules.length?pendingSchedules.map(p=><div className="admin-review-item" key={p.id}><strong>{courseText(p.course_offering_id)}</strong><p>{profName(p.faculty_id)} · {patternLabel(p)} · {clock(p.start_minute)} · {vMap.get(p.venue_id)?.name||'Venue'}</p></div>):<p>No outstanding schedules.</p>}<p className="curriculum-note">Use Room and Schedule Assignment → Admin approvals to validate and decide pending proposals.</p></div>
+    <div><h3>Pending room schedules</h3>{pendingSchedules.length?pendingSchedules.map(p=><div className="admin-review-item" key={p.id}><strong>{courseText(p.course_offering_id)}</strong><p>{profName(p.faculty_id)} · {patternLabel(p)} · {p.meeting_pattern==='FIELD'?'No room required':clock(p.start_minute)+' · '+(vMap.get(p.venue_id)?.name||'Venue')}</p></div>):<p>No outstanding schedules.</p>}<p className="curriculum-note">Use Room and Schedule Assignment → Admin approvals to validate and decide pending proposals.</p></div>
    </div>
   </>:tab==='conflicts'?<>
    <h3>Detected schedule conflicts</h3>{unresolved.length?unresolved.map((issue,i)=><div className="admin-conflict" key={i}><strong>{issue.kind}</strong><p>{issue.details}</p></div>):<p>No overlapping approved meetings found.</p>}
    <h3>Reschedule an approved assignment</h3>
    <p className="curriculum-note">Choose an approved meeting below. All changes are checked for instructor, room, student-block and availability conflicts and recorded in the administrative audit log.</p>
-   <div className="selection-rows">{published.length?published.map(p=><div className="selection-row" key={p.id}><div><strong>{courseText(p.course_offering_id)}</strong><p>{profName(p.faculty_id)} · {patternLabel(p)} · {clock(p.start_minute)}–{clock(p.start_minute+p.duration_minutes)} · {vMap.get(p.venue_id)?.name}</p></div><button className="ghost" type="button" onClick={()=>openRevision(p)}>Reschedule</button></div>):<p>No approved schedules yet.</p>}</div>
+   <div className="selection-rows">{published.length?published.map(p=><div className="selection-row" key={p.id}><div><strong>{courseText(p.course_offering_id)}</strong><p>{profName(p.faculty_id)} · {patternLabel(p)} · {p.meeting_pattern==='FIELD'?'No room required':clock(p.start_minute)+'–'+clock(p.start_minute+p.duration_minutes)+' · '+vMap.get(p.venue_id)?.name}</p></div><button className="ghost" type="button" onClick={()=>openRevision(p)}>Reschedule</button></div>):<p>No approved schedules yet.</p>}</div>
    {editing&&<div className="admin-revision-form"><h3>Revise: {courseText(editing.course_offering_id)}</h3>
     <div className="schedule-form-grid">
      <label>Room / venue<select value={venueId} onChange={e=>setVenueId(e.target.value)}>{venues.map(v=><option key={v.id} value={v.id}>{v.name}</option>)}</select></label>
