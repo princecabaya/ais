@@ -6,6 +6,8 @@ export function AcademicTermSettings(){
  const [terms,setTerms]=useState<AcademicTerm[]>([]);
  const [semester,setSemester]=useState(1);
  const [year,setYear]=useState('2026–2027');
+ const firstYear=new Date().getFullYear();
+ const academicYearOptions=Array.from({length:10},(_,i)=>{const y=firstYear+i;return `${y}–${y+1}`});
  const [busy,setBusy]=useState(false),[error,setError]=useState('');
  const load=useCallback(async()=>{
   if(!supabase)return;
@@ -28,11 +30,11 @@ export function AcademicTermSettings(){
    <div className="selection-top"><div><span className="kicker">ADMINISTRATOR · ACADEMIC CALENDAR</span><h2>Course Selection Semester</h2><p>Choose which semester's prospectus subjects appear to faculty across BEEd and BSE.</p></div></div>
    <p className="curriculum-note">Currently active: <strong>{current?`${current.academic_year} · ${current.semester===1?'First':'Second'} Semester`:'No active semester'}</strong>.</p>
    <div className="term-setting-fields">
-    <label>Academic year<select value={year} onChange={e=>setYear(e.target.value)}>{[...new Set([...terms.map(t=>t.academic_year),'2026–2027'])].sort().reverse().map(y=><option value={y} key={y}>{y}</option>)}</select></label>
+    <label>Academic year<select value={year} onChange={e=>setYear(e.target.value)}>{academicYearOptions.map(y=><option value={y} key={y}>{y}</option>)}</select></label>
     <label>Semester<select value={semester} onChange={e=>setSemester(Number(e.target.value))}><option value={1}>First semester</option><option value={2}>Second semester</option></select></label>
     <button className="primary" type="button" disabled={busy} onClick={()=>void activate()}>{busy?'Activating…':'Activate selected semester'}</button>
    </div>
-   <p className="curriculum-note">Only administrators can change the active semester. The new term uses the same 11 student blocks and their assigned prospectuses. Old requests and approval records are preserved under their original term. Other academic years require their student blocks to be configured first.</p>
+   <p className="curriculum-note">Only administrators can change the active semester. Select the current academic year or one of the next nine years. On first activation, the system creates that year's 11 block records using the existing curriculum mappings. Review the mappings before using a future year; older semester requests remain preserved.</p>
    {error&&<div className="notice" role="alert">{error}</div>}
   </section>
 }
