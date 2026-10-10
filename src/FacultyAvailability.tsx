@@ -28,6 +28,7 @@ export function FacultyAvailability({facultyId,isAdmin}:{facultyId:string;isAdmi
  const [editing,setEditing]=useState<{day:number;slot:number}|null>(null);
  const [overrideTarget,setOverrideTarget]=useState<{day:number;slot:number}|null>(null);
  const [justification,setJustification]=useState('');
+ const [expanded,setExpanded]=useState(false);
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
  const [message,setMessage]=useState('');
@@ -97,6 +98,8 @@ export function FacultyAvailability({facultyId,isAdmin}:{facultyId:string;isAdmi
  };
  return <section id="faculty-availability" className="panel faculty-availability">
   <div className="availability-top"><div><span className="kicker">PHASE 2 · TEACHING AVAILABILITY</span><h2>Faculty Availability</h2><p>Mark periods you prefer or cannot teach. Unmarked periods are treated as available, not preferred.</p></div><button type="button" className="ghost" onClick={()=>void load()}>Refresh</button></div>
+  <button type="button" className="availability-toggle" aria-expanded={expanded} onClick={()=>setExpanded(v=>!v)}><span>{expanded?"Hide availability timetable":"Show availability timetable"}</span><span>{expanded?"▲":"▼"}</span></button>
+  {expanded&&<>
   <div className="availability-intro">
    <div><strong>{counts.preferred}</strong><span>Preferred periods</span></div>
    <div><strong>{counts.unavailable}</strong><span>Unavailable periods</span></div>
@@ -127,6 +130,7 @@ export function FacultyAvailability({facultyId,isAdmin}:{facultyId:string;isAdmi
    <label>Required justification<textarea rows={3} minLength={10} maxLength={1000} value={justification} onChange={e=>setJustification(e.target.value)} placeholder="Campus staffing need, faculty consultation, and reason for exception"/></label>
    <div className="availability-dialog-actions"><button className="primary" type="button" disabled={busy||justification.trim().length<10} onClick={()=>void authorize()}>Record exception</button><button className="ghost" type="button" onClick={()=>setOverrideTarget(null)}>Cancel</button></div>
   </div>}
+  </>}
   {message&&<div className="notice" role="status">{message}</div>}
  </section>;
 }
