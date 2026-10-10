@@ -10,6 +10,7 @@ type Faculty={id:string;first_name:string;last_name:string;department:string};
 type Proposal={id:number;course_request_id:number;academic_term_id:number;faculty_id:string;course_offering_id:number;venue_id:number;meeting_pattern:string;pathfit_weekday:number|null;start_minute:number;duration_minutes:number;status:string;submitted_at:string;decision_note:string|null};
 type Meeting={id:number;proposal_id:number;academic_term_id:number;faculty_id:string;class_section_id:string;venue_id:number;weekday:number;start_minute:number;end_minute:number};
 type Term={id:number;academic_year:string;semester:number;is_active:boolean};
+type Publication={academic_term_id:number;published_at:string;revision:number};
 const DAYS=['Mon','Tue','Wed','Thu','Fri'];
 const TIMES=[450,540,630,780,870,960,1050];
 const clock=(minutes:number)=>{const h=Math.floor(minutes/60),m=minutes%60;return ((h+11)%12+1)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')};
@@ -26,6 +27,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
  const [meetings,setMeetings]=useState<Meeting[]>([]);
  const [terms,setTerms]=useState<Term[]>([]);
  const [faculty,setFaculty]=useState<Faculty[]>([]);
+ const [publications,setPublications]=useState<Publication[]>([]);
  const [selectedRequest,setSelectedRequest]=useState('');
  const [venue,setVenue]=useState('');
  const [pattern,setPattern]=useState<Pattern>('MW');
@@ -41,9 +43,10 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const currentTerm=terms.find(t=>t.is_active);
+ const isPublished=publications.some(p=>p.academic_term_id===currentTerm?.id);
  const load=useCallback(async()=>{
   if(!supabase)return;setLoading(true);
-  const [v,r,o,c,s,p,m,t,f]=await Promise.all([
+  const [v,r,o,c,s,p,m,t,f,pub]=await Promise.all([
    supabase.from('schedule_venues').select('id,name,venue_type,active').eq('active',true).order('name'),
    supabase.from('faculty_course_requests').select('id,faculty_id,course_offering_id,academic_term_id,status').eq('status','approved'),
    supabase.from('course_offerings').select('id,class_section_id,curriculum_course_id'),
@@ -52,9 +55,10 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
    supabase.from('schedule_proposals').select('id,course_request_id,academic_term_id,faculty_id,course_offering_id,venue_id,meeting_pattern,pathfit_weekday,start_minute,duration_minutes,status,submitted_at,decision_note').order('submitted_at',{ascending:false}),
    supabase.from('schedule_meetings').select('id,proposal_id,academic_term_id,faculty_id,class_section_id,venue_id,weekday,start_minute,end_minute').eq('active',true),
    supabase.from('academic_terms').select('id,academic_year,semester,is_active'),
-   isAdmin?supabase.from('profiles').select('id,first_name,last_name,department').eq('status','active'):Promise.resolve({data:[] as Faculty[],error:null})
+   isAdmin?supabase.from('profiles').select('id,first_name,last_name,department').eq('status','active'):Promise.resolve({data:[] as Faculty[],error:null}),
+   supabase.from('schedule_publications').select('academic_term_id,published_at,revision')
   ]);
-  const error=[v,r,o,c,s,p,m,t,f].find(x=>x.error)?.error;
+  const error=[v,r,o,c,s,p,m,t,f,pub].find(x=>x.error)?.error;
   if(error)setMessage(error.message);
   else{
    setVenues((v.data||[]) as Venue[]);setRequests((r.data||[]) as Request[]);
@@ -62,6 +66,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
    setSections((s.data||[]) as Section[]);setProposals((p.data||[]) as Proposal[]);
    setMeetings((m.data||[]) as Meeting[]);setTerms((t.data||[]) as Term[]);
    setFaculty((f.data||[]) as Faculty[]);
+   setPublications((pub.data||[]) as Publication[]);
   }
   setLoading(false);
  },[isAdmin]);
@@ -151,6 +156,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
     {myProposals.length?myProposals.map(p=><div className="selection-row" key={p.id}><div><strong>{label(p.course_offering_id)}</strong><p>{days(p)} · {clock(p.start_minute)}–{clock(p.start_minute+p.duration_minutes)} · {venueMap.get(p.venue_id)?.name||'Venue'} · <strong>{p.status}</strong></p>{p.decision_note&&<small>Administrator: {p.decision_note}</small>}</div>{p.status==='pending'&&<button className="ghost" disabled={busy} type="button" onClick={()=>void withdraw(p.id)}>Withdraw</button>}</div>):<p>No schedule proposals yet. First obtain approval for a course preference in Course Selection.</p>}
    </div>
   </>:tab==='timetable'?<>
+    {!isPublished&&<p className="curriculum-note">{isAdmin?'Administrator preview: this timetable has not been published.':'The official timetable is not yet published. Approved course allocations remain visible in your course requests.'}</p>}
     <div className="schedule-filter-row"><label>Weekday<select value={selectedDay} onChange={e=>setSelectedDay(Number(e.target.value))}>{DAYS.map((d,i)=><option key={d} value={i+1}>{['Monday','Tuesday','Wednesday','Thursday','Friday'][i]}</option>)}</select></label><label>Venue<select value={selectedVenue} onChange={e=>setSelectedVenue(e.target.value)}><option value="ALL">All rooms and venues</option>{venues.map(v=><option value={v.id} key={v.id}>{v.name}</option>)}</select></label></div>
     <div className="schedule-session-list">{activeMeetings.length?activeMeetings.map(m=><div className="published-session" key={m.id}><strong>{clock(m.start_minute)}–{clock(m.end_minute)}</strong><span>{label(proposals.find(p=>p.id===m.proposal_id)?.course_offering_id??-1)}</span><span>{venueMap.get(m.venue_id)?.name} · {facultyMap.get(m.faculty_id)?facultyMap.get(m.faculty_id)!.first_name+' '+facultyMap.get(m.faculty_id)!.last_name:'Faculty assignment'} · {conflict(m)}</span></div>):<p>No approved sessions for these filters.</p>}</div>
   </>:<div className="selection-rows">{pending.length?pending.map(p=><div className="selection-row admin-decision" key={p.id}><div><strong>{label(p.course_offering_id)}</strong><p>{days(p)} · {clock(p.start_minute)}–{clock(p.start_minute+p.duration_minutes)} · {venueMap.get(p.venue_id)?.name}</p><small>Instructor: {facultyMap.get(p.faculty_id)?.last_name||p.faculty_id.slice(0,8)}. Conflicts and unavailable periods are checked when you approve.</small></div><div className="decision-controls"><label>Approval / rejection justification<input minLength={10} value={reason[p.id]||''} onChange={e=>setReason(prev=>({...prev,[p.id]:e.target.value}))} placeholder="Confirm room, section, and instructor capacity"/></label><div><button className="primary" disabled={busy||!reason[p.id]||reason[p.id].trim().length<10} type="button" onClick={()=>void decide(p.id,true)}>Approve schedule</button><button className="ghost" disabled={busy||!reason[p.id]||reason[p.id].trim().length<10} type="button" onClick={()=>void decide(p.id,false)}>Reject</button></div></div></div>):<p>No pending schedule proposals.</p>}</div>}
