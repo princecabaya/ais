@@ -953,3 +953,29 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .workload-regular-tag,.workload-extra-tag{display:inline-block;font-size:.78rem;font-weight:700;padding:.3rem .55rem;border-radius:999px;white-space:nowrap}
 .workload-regular-tag{background:#e6f2fc;color:#175887}
 .workload-extra-tag{background:#ffebdc;color:#98521a}
+
+
+/* Floating faculty-to-administrator help messenger */
+.faculty-chat-widget{position:fixed;left:22px;bottom:22px;z-index:1200;display:flex;flex-direction:column;align-items:flex-start;gap:.75rem}
+.faculty-chat-bubble{display:flex;align-items:center;gap:.55rem;border:0;border-radius:999px;background:#1e669d;color:white;padding:.9rem 1.05rem;box-shadow:0 8px 28px #173b5c55;font:inherit;font-size:.87rem;font-weight:700;cursor:pointer}
+.faculty-chat-window{display:flex;flex-direction:column;width:min(375px,calc(100vw - 28px));height:min(520px,calc(100vh - 115px));background:white;border:1px solid #d6e3ef;border-radius:1.1rem;box-shadow:0 15px 55px #12345655;overflow:hidden}
+.faculty-chat-head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;background:#1e659b;color:white;padding:.85rem 1rem}
+.faculty-chat-head>div{display:grid;gap:.2rem}
+.faculty-chat-head small{font-size:.74rem;opacity:.9}
+.faculty-chat-head button{border:0;background:transparent;color:white;cursor:pointer}
+.faculty-chat-inbox{display:flex;gap:.4rem;overflow-x:auto;padding:.5rem;border-bottom:1px solid #e0eaf2;min-height:48px}
+.faculty-chat-inbox button{flex:none;border:1px solid #cddfeb;background:#f5f9fd;color:#28547a;border-radius:999px;padding:.35rem .65rem;font-size:.76rem;cursor:pointer}
+.faculty-chat-inbox button.chosen{background:#d6eafa;border-color:#1e669d}
+.faculty-chat-history{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.7rem;overscroll-behavior:contain}
+.faculty-chat-empty{font-size:.86rem;color:#6c8193;text-align:center;margin:auto}
+.chat-bubble{max-width:88%;align-self:flex-start;border-radius:.85rem .85rem .85rem .2rem;background:#eef4f9;color:#244b6e;padding:.65rem .8rem;overflow-wrap:anywhere}
+.chat-bubble.own{align-self:flex-end;border-radius:.85rem .85rem .2rem .85rem;background:#d9ecfc}
+.chat-bubble small{display:block;font-size:.7rem;color:#597f9f}
+.chat-bubble p{margin:.3rem 0 0;white-space:pre-wrap;font-size:.85rem}
+.faculty-chat-form{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid #e2ebf2}
+.faculty-chat-form input{flex:1;min-width:0;padding:.65rem .7rem;border:1px solid #d1e1ed;border-radius:999px;font:inherit}
+.faculty-chat-form button{width:42px;height:42px;border:0;border-radius:50%;background:#1e669d;color:white;display:grid;place-items:center;cursor:pointer}
+.faculty-chat-form button:disabled{opacity:.5}
+.faculty-chat-footer{font-size:.66rem;text-align:center;color:#72889d;padding:.35rem;border-top:1px solid #eef3f7}
+.faculty-chat-error{margin:0;padding:.4rem .7rem;font-size:.76rem;color:#ad352b;background:#fff1ee}
+@media(max-width:620px){.faculty-chat-widget{left:12px;bottom:12px}.faculty-chat-window{height:min(72vh,520px)}.faculty-chat-bubble{padding:.75rem}}
