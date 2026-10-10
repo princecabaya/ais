@@ -979,3 +979,13 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .faculty-chat-footer{font-size:.66rem;text-align:center;color:#72889d;padding:.35rem;border-top:1px solid #eef3f7}
 .faculty-chat-error{margin:0;padding:.4rem .7rem;font-size:.76rem;color:#ad352b;background:#fff1ee}
 @media(max-width:620px){.faculty-chat-widget{left:12px;bottom:12px}.faculty-chat-window{height:min(72vh,520px)}.faculty-chat-bubble{padding:.75rem}}
+
+
+/* Existing faculty login and first-time account activation */
+.auth-mode-switch{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;padding:.3rem;border-radius:.9rem;background:#edf4fa;margin:.5rem 0 1.2rem}
+.auth-mode-switch button{border:1px solid transparent;background:transparent;color:#365c7b;padding:.75rem .35rem;border-radius:.7rem;font-weight:750;font-size:.88rem;cursor:pointer;white-space:normal}
+.auth-mode-switch button.auth-mode-selected{background:#1f669c;color:#fff;box-shadow:0 3px 12px #194c7930}
+.auth-activation-link{align-self:center;text-align:center;margin-top:.4rem}
+.auth form{display:grid;gap:1rem}
+.auth form label{display:grid;gap:.4rem}
+.auth form .primary{width:100%}
