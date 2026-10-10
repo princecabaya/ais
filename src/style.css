@@ -790,3 +790,52 @@ footer span { color: var(--orange-700); font-weight: 700; }
  .app .features{grid-template-columns:1fr}
  .app footer{flex-direction:column;align-items:flex-start}
 }
+
+
+/* Public landing: PSU introduction on the left and authentication on the right.
+   Signed-in workspace intentionally remains single column. */
+@media (min-width: 901px) {
+ .app:not(.app--signed-in) > main{
+   display:grid;
+   grid-template-columns:minmax(0,1.25fr) minmax(345px,.9fr);
+   align-items:stretch;
+   column-gap:1.3rem;
+ }
+ .app:not(.app--signed-in) > main > .hero{
+   grid-column:1;
+   grid-row:1;
+   min-height:415px;
+   display:flex;
+   flex-direction:column;
+   align-items:flex-start;
+   justify-content:center;
+ }
+ .app:not(.app--signed-in) > main > .auth,
+ .app:not(.app--signed-in) > main > .warning{
+   grid-column:2;
+   grid-row:1;
+   width:100%;
+   min-width:0;
+   max-width:none;
+   margin:0;
+   justify-self:stretch;
+   align-self:stretch;
+   display:flex;
+   flex-direction:column;
+   justify-content:center;
+ }
+ .app:not(.app--signed-in) > main > .auth > form,
+ .app:not(.app--signed-in) > main > .auth > .link-confirmation{
+   width:100%;
+ }
+ .app:not(.app--signed-in) > main > .features,
+ .app:not(.app--signed-in) > main > .notice{
+   grid-column:1/-1;
+ }
+}
+.app:not(.app--signed-in) > header .topright:empty{display:none}
+.app .hero-badge{gap:0}
+@media (max-width:900px){
+ .app:not(.app--signed-in) > main{display:grid;grid-template-columns:minmax(0,1fr)}
+ .app:not(.app--signed-in) > main > .auth{max-width:600px;width:100%;margin-inline:auto}
+}
