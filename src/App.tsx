@@ -12,7 +12,7 @@ type Profile = {
   last_name: string;
   middle_initial: string | null;
   department: 'BEEd' | 'BSE' | 'Administration';
-  employment_type: 'regular' | 'part_time';
+  employment_type: 'regular' | 'tempo' | 'cos' | 'part_time';
   role: 'faculty' | 'admin';
   status: 'active' | 'pending' | 'disabled';
 };
@@ -37,7 +37,7 @@ export function App() {
   const [last, setLast] = useState('');
   const [mi, setMi] = useState('');
   const [department, setDepartment] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
-  const [employment, setEmployment] = useState<'regular' | 'part_time'>('regular');
+  const [employment, setEmployment] = useState<'regular' | 'tempo' | 'cos' | 'part_time'>('regular');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
@@ -264,7 +264,7 @@ export function App() {
                 <label>Middle initial<input maxLength={2} value={mi} onChange={(e) => setMi(e.target.value)} placeholder="A." /></label>
                 <div className="two">
                   <label>Faculty affiliation<select value={department} onChange={(e) => setDepartment(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
-                  <label>Employment type<select value={employment} onChange={(e) => setEmployment(e.target.value as 'regular' | 'part_time')}><option value="regular">Regular</option><option value="part_time">Part-time</option></select></label>
+                  <label>Employment type<select value={employment} onChange={(e) => setEmployment(e.target.value as 'regular' | 'tempo' | 'cos' | 'part_time')}><option value="regular">Regular — Plantilla (Full-time)</option><option value="tempo">Tempo — Conditional Plantilla (Full-time)</option><option value="cos">COS — Contract of Service (Full-time)</option><option value="part_time">Part-time</option></select></label>
                 </div>
                 <button disabled={busy} className="primary">Save profile</button>
               </form>
@@ -276,7 +276,7 @@ export function App() {
               <div>
                 <span className="kicker">FACULTY DASHBOARD</span>
                 <h2>Welcome, {profile.first_name} {profile.last_name}</h2>
-                <p>{profile.department} Faculty · {profile.employment_type === 'part_time' ? 'Part-time' : 'Regular'} · {profile.role === 'admin' ? 'Administrator' : 'Faculty'}</p>
+                <p>{profile.department} Faculty · {({regular:'Regular · Plantilla (Full-time)',tempo:'Tempo · Conditional Plantilla (Full-time)',cos:'COS · Contract of Service (Full-time)',part_time:'Part-time'} as const)[profile.employment_type]} · {profile.role === 'admin' ? 'Administrator' : 'Faculty'}</p>
               </div>
               <span className="status"><CheckCircle2 size={16} /> {profile.status}</span>
             </div>
