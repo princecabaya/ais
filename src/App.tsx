@@ -8,6 +8,7 @@ import { FacultyAvailability } from './FacultyAvailability';
 import { RoomScheduling } from './RoomScheduling';
 import { AdministratorApproval } from './AdministratorApproval';
 import { OfficialWorkload } from './OfficialWorkload';
+import { AcademicTermSettings } from './AcademicTermSettings';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -291,6 +292,7 @@ export function App() {
               <article><CalendarDays /><strong>Faculty availability</strong><p>Set preferred and unavailable teaching periods and review authorized exceptions.</p><span>Available below</span></article>
               <article><ClipboardList /><strong>Official workload</strong><p>Export editable PSU-ACA-031 Word documents from approved course schedules.</p><span>Available below</span></article>
             </div>
+            {profile.role === 'admin' && <AcademicTermSettings />}
             <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
