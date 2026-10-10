@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import JSZip from 'jszip';
 import { supabase } from './supabase';
+import { calculateFacultyWorkload, FULL_TIME_WEEKLY_TARGET } from './workloadRules';
 
 type Faculty={id:string;first_name:string;last_name:string;middle_initial:string|null;department:string;employment_type:string};
 type Term={id:number;academic_year:string;semester:number;is_active:boolean};
@@ -9,7 +10,7 @@ type Offering={id:number;class_section_id:string;curriculum_course_id:number};
 type Section={id:string;block_label:string};
 type Venue={id:number;name:string};
 type Meeting={faculty_id:string;academic_term_id:number;course_offering_id:number;venue_id:number;weekday:number;start_minute:number;end_minute:number;active:boolean};
-type Request={faculty_id:string;course_offering_id:number;academic_term_id:number;status:string};
+type Request={faculty_id:string;course_offering_id:number;academic_term_id:number;status:string;requested_at:string};
 type WorkCourse={course_offering_id:number;faculty_id:string;academic_term_id:number;load_category:'regular'|'extra';units_override:string|null;whe:number|null;lec_hours:number|null;lab_hours:number|null;rle_hours:number|null;male_students:number|null;female_students:number|null};
 type WorkDetails={faculty_id:string;academic_term_id:number;[key:string]:string|number|null};
 type Publication={academic_term_id:number;published_at:string;revision:number};
@@ -169,7 +170,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
    supabase.from('class_sections').select('id,block_label'),
    supabase.from('schedule_venues').select('id,name'),
    supabase.from('schedule_meetings').select('faculty_id,academic_term_id,course_offering_id,venue_id,weekday,start_minute,end_minute,active').eq('active',true),
-   supabase.from('faculty_course_requests').select('faculty_id,course_offering_id,academic_term_id,status').eq('status','approved'),
+   supabase.from('faculty_course_requests').select('faculty_id,course_offering_id,academic_term_id,status,requested_at').eq('status','approved'),
    supabase.from('faculty_workload_courses').select('course_offering_id,faculty_id,academic_term_id,load_category,units_override,whe,lec_hours,lab_hours,rle_hours,male_students,female_students'),
    supabase.from('faculty_workload_details').select('*'),
    supabase.from('schedule_publications').select('academic_term_id,published_at,revision')
@@ -201,7 +202,9 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  const fac=faculty.find(f=>f.id===selectedFaculty);
  const rows=useMemo(()=>{
   const cMap=new Map(courses.map(c=>[c.id,c])),oMap=new Map(offerings.map(o=>[o.id,o])),sMap=new Map(sections.map(s=>[s.id,s])),vMap=new Map(venues.map(v=>[v.id,v]));
-  const approved=new Set(requests.filter(r=>r.faculty_id===selectedFaculty&&r.academic_term_id===term?.id&&r.status==='approved').map(r=>r.course_offering_id));
+  const approvedRequests=requests.filter(r=>r.faculty_id===selectedFaculty&&r.academic_term_id===term?.id&&r.status==='approved');
+  const approved=new Set(approvedRequests.map(r=>r.course_offering_id));
+  const requestByOffering=new Map(approvedRequests.map(r=>[r.course_offering_id,r]));
   const byOffering=new Map<number,Meeting[]>();
   for(const m of meetings)if(m.faculty_id===selectedFaculty&&m.academic_term_id===term?.id&&approved.has(m.course_offering_id)){
    byOffering.set(m.course_offering_id,[...(byOffering.get(m.course_offering_id)||[]),m]);
@@ -210,17 +213,30 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
    const o=oMap.get(id),c=cMap.get(o?.curriculum_course_id??-1),s=sMap.get(o?.class_section_id??''),w=classifications.find(x=>x.course_offering_id===id);
    const sorted=[...slots].sort((a,b)=>a.weekday-b.weekday),first=sorted[0];
    return {id,code:c?.course_code||'—',title:c?.course_title||'—',section:s?.block_label||'—',units:c?.units??null,room:vMap.get(first.venue_id)?.name||'—',
+    curriculumCourseId:c?.id??-1,sortKey:requestByOffering.get(id)?.requested_at||'9999',
     days:sorted.map(x=>dayNames[x.weekday]).join(''),time:clock(first.start_minute)+'–'+clock(first.end_minute),
     weeklyMinutes:slots.reduce((n,x)=>n+x.end_minute-x.start_minute,0),w};
-  }).sort((a,b)=>a.section.localeCompare(b.section)||a.code.localeCompare(b.code));
+  }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey)||a.id-b.id);
  },[courses,offerings,sections,venues,meetings,requests,classifications,selectedFaculty,term?.id]);
+ const fullTime=fac?.employment_type!=='part_time';
+ const computed=calculateFacultyWorkload(rows.map(r=>({
+   id:r.id,curriculumCourseId:r.curriculumCourseId,courseCode:r.code,courseTitle:r.title,units:r.units,
+   weeklyTeachingHours:r.weeklyMinutes/60,sortKey:r.sortKey
+ })),fullTime);
+ const computedById=new Map(computed.map(r=>[r.id,r]));
+ const regularCourses=computed.filter(c=>c.category==='regular');
+ const extraCourses=computed.filter(c=>c.category==='extra');
+ const regularCreditComplete=regularCourses.every(c=>c.creditedHours!==null);
+ const regularCreditedHours=regularCreditComplete?regularCourses.reduce((n,c)=>n+(c.creditedHours||0),0):null;
+ const extraCreditedHours=extraCourses.every(c=>c.creditedHours!==null)?extraCourses.reduce((n,c)=>n+(c.creditedHours||0),0):null;
+ const sharedPreparations=computed.filter(c=>c.sharedPreparation).length;
  const initialDetails=detailRows.find(d=>d.faculty_id===selectedFaculty&&d.academic_term_id===term?.id);
  const details:Record<string,string>={};for(const k of FIELDS){const v=detailDraft[k]??String(initialDetails?.[k]??'');details[k]=WORKLOAD_GROUPS.some(g=>g.details===k||g.time===k||g.day===k)&&v==='0'?'':v;}
  const selectedRow=rows.find(r=>String(r.id)===courseDraft.id);
  function pickRow(id:number){
   const r=rows.find(x=>x.id===id);if(!r)return;
-  setCourseDraft({id:String(id),category:r.w?.load_category||'regular',units_override:r.w?.units_override||'',
-   whe:r.w?.whe===null||r.w?.whe===undefined?'':String(r.w.whe),
+  setCourseDraft({id:String(id),category:computedById.get(id)?.category||'regular',units_override:r.w?.units_override||'',
+   whe:computedById.get(id)?.creditedHours==null?'':String(computedById.get(id)!.creditedHours),
    lec:r.w?.lec_hours==null?'':String(r.w.lec_hours),lab:r.w?.lab_hours==null?'':String(r.w.lab_hours),
    rle:r.w?.rle_hours==null?'':String(r.w.rle_hours),male:r.w?.male_students==null?'':String(r.w.male_students),
    female:r.w?.female_students==null?'':String(r.w.female_students)});
@@ -230,8 +246,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   if(!supabase||!selectedRow)return;
   setBusy(true);setMessage('');
   const {error}=await supabase.rpc('admin_save_workload_course',{
-   p_offering_id:selectedRow.id,p_category:courseDraft.category,
-   p_units_override:courseDraft.units_override||null,p_whe:numberOrNull(courseDraft.whe||''),
+   p_offering_id:selectedRow.id,p_category:computedById.get(selectedRow.id)?.category||'regular',
+   p_units_override:courseDraft.units_override||null,p_whe:computedById.get(selectedRow.id)?.creditedHours??null,
    p_lec:numberOrNull(courseDraft.lec||''),p_lab:numberOrNull(courseDraft.lab||''),p_rle:numberOrNull(courseDraft.rle||''),
    p_male:numberOrNull(courseDraft.male||''),p_female:numberOrNull(courseDraft.female||''),p_reason:reason.trim()
   });
@@ -250,8 +266,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   try{
    const entries:ExportCourse[]=rows.map(r=>({
     code:r.code,title:r.title,section:r.section,units:r.w?.units_override||String(r.units??''),room:r.room,time:r.time,days:r.days,
-    whe:r.w?.whe??null,lec:r.w?.lec_hours??null,lab:r.w?.lab_hours??null,rle:r.w?.rle_hours??null,
-    male:r.w?.male_students??null,female:r.w?.female_students??null,category:r.w?.load_category||'regular'
+    whe:computedById.get(r.id)?.creditedHours??null,lec:r.w?.lec_hours??null,lab:r.w?.lab_hours??null,rle:r.w?.rle_hours??null,
+    male:r.w?.male_students??null,female:r.w?.female_students??null,category:computedById.get(r.id)?.category||'regular'
    }));
    await exportUsingTemplate(template,fac,term,entries,details,published);
    setMessage('Editable Word document generated. Review missing fields, equivalencies, and signatures before approving.');
@@ -264,13 +280,34 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   <p className="curriculum-note">{term?`${term.academic_year} · Semester ${term.semester}`:'No active term'} · <strong>{published?'Timetable published':'Unpublished draft'}</strong>. Exported documents remain editable and require official review and signatures.</p>
   {isAdmin&&<label className="workload-select">Faculty member<select value={selectedFaculty} onChange={e=>{setSelectedFaculty(e.target.value);setCourseDraft({});setDetailDraft({})}}>{faculty.map(f=><option key={f.id} value={f.id}>{f.last_name}, {f.first_name} · {f.department}</option>)}</select></label>}
   {loading?<p>Loading approved faculty schedules…</p>:<>
-   <h3>Approved teaching courses</h3>
-   <div className="curriculum-table-wrap"><table className="curriculum-table"><thead><tr><th>Course and block</th><th>Time / room</th><th>Units</th><th>Weekly meeting hrs.</th><th>Load</th>{isAdmin&&<th>Manage</th>}</tr></thead><tbody>{rows.map(r=><tr key={r.id}><td><strong>{r.code} · {r.section}</strong><p>{r.title}</p></td><td>{r.days} · {r.time}<p>{r.room}</p></td><td>{r.units??'—'}</td><td>{(r.weeklyMinutes/60).toFixed(1)}</td><td>{r.w?.load_category||'Needs classification'}{r.w?.whe!==null&&r.w?.whe!==undefined?` · WHE ${r.w.whe}`:''}</td>{isAdmin&&<td><button type="button" className="ghost" onClick={()=>pickRow(r.id)}>Edit</button></td>}</tr>)}</tbody></table></div>
+   <h3>Teaching Load and Preparation Credits</h3>
+   <div className="workload-policy-note">
+    <strong>Campus workload calculation</strong>
+    <p>Full-time faculty (Regular, Tempo and COS): first 6 approved, scheduled course sections are regular load; course 7 onward is extra load (7th–8th expected). The sequence follows the original course-request date. The 5th and 6th regular sections earn an additional credit unit (2 credited hours) if they represent a new subject preparation.</p>
+    <p>Teaching time counts for each student block; preparation time counts once per distinct course code. Extra load counts actual teaching hours only and is never doubled. The full-time target is <strong>40 credited hours weekly</strong>.</p>
+   </div>
+   <div className="workload-summary-grid workload-policy-metrics">
+    <div><span>Regular course sections</span><strong>{regularCourses.length}</strong></div>
+    <div><span>Extra course sections</span><strong>{extraCourses.length}</strong></div>
+    <div><span>Regular credited hours</span><strong>{regularCreditedHours===null?'Verify units':regularCreditedHours.toFixed(1)+' / '+FULL_TIME_WEEKLY_TARGET}</strong></div>
+    <div><span>Extra teaching hours (not doubled)</span><strong>{extraCreditedHours===null?'Verify units':extraCreditedHours.toFixed(1)}</strong></div>
+    <div><span>Shared preparations</span><strong>{sharedPreparations}</strong></div>
+   </div>
+   {!fullTime&&<p className="curriculum-note">Part-time appointments do not have an automatic 40-hour minimum. Teaching hours appear without automatic preparation credits; administrator review remains required.</p>}
+   {computed.length>8&&fullTime&&<p className="notice">More than eight course sections are approved. The 9th and subsequent sections are shown as extra teaching load, but require additional administrative review.</p>}
+   <div className="curriculum-table-wrap"><table className="curriculum-table"><thead><tr><th># · Subject / Block</th><th>Schedule / Room</th><th>Teaching hrs</th><th>Prep hrs</th><th>5th/6th bonus</th><th>Credited hrs</th><th>Classification</th>{isAdmin&&<th>Details</th>}</tr></thead><tbody>{rows.map(r=>{const c=computedById.get(r.id)!;return <tr key={r.id}>
+    <td><strong>#{c.position} · {r.code} · {r.section}</strong><p>{r.title}</p></td>
+    <td>{r.days} · {r.time}<p>{r.room}</p></td>
+    <td>{c.teachingHours.toFixed(1)}</td><td>{c.preparationHours.toFixed(1)}{c.sharedPreparation&&<p>Shared preparation</p>}</td>
+    <td>{c.bonusHours.toFixed(1)}</td><td><strong>{c.creditedHours===null?'Verify units':c.creditedHours.toFixed(1)}</strong></td>
+    <td><span className={c.category==='extra'?'workload-extra-tag':'workload-regular-tag'}>{c.category==='extra'?'Extra load':'Regular load'}</span></td>
+    {isAdmin&&<td><button type="button" className="ghost" onClick={()=>pickRow(r.id)}>Review</button></td>}
+   </tr>})}</tbody></table></div>
    {rows.length===0&&<p>No approved, scheduled courses found for this faculty member. Approve courses and their room schedules first.</p>}
-   {isAdmin&&selectedRow&&<div className="workload-edit"><h3>Review: {selectedRow.code} · {selectedRow.section}</h3><p className="curriculum-note">WHE and contact-hour equivalencies must follow authorized university rules. They are not inferred from the course units.</p>
+   {isAdmin&&selectedRow&&<div className="workload-edit"><h3>Review: {selectedRow.code} · {selectedRow.section}</h3><p className="curriculum-note">The load category and computed hours are set by the campus rule. This form edits supporting details (units notation, enrollment and lecture/laboratory hours); administrator justification is recorded.</p>
     <div className="workload-fields">
-     <label>Workload classification<select value={courseDraft.category} onChange={e=>setCourse('category',e.target.value)}><option value="regular">Regular teaching load</option><option value="extra">Extra teaching load</option></select></label>
-     {([{k:'units_override',l:'Approved units notation (optional)'},{k:'whe',l:'Approved WHE'},{k:'lec',l:'Lecture contact hours'},{k:'lab',l:'Lab contact hours'},{k:'rle',l:'RLE hours'},{k:'male',l:'Male students'},{k:'female',l:'Female students'}] as const).map(x=><label key={x.k}>{x.l}<input type={x.k==='units_override'?'text':'number'} min={x.k==='units_override'?undefined:0} step={x.k==='male'||x.k==='female'?1:'0.5'} value={courseDraft[x.k]||''} onChange={e=>setCourse(x.k,e.target.value)}/></label>)}
+     <label>Automatic classification<input disabled value={computedById.get(selectedRow.id)?.category==='extra'?'Extra teaching load':'Regular teaching load'}/></label><label>Calculated credited hours<input disabled value={computedById.get(selectedRow.id)?.creditedHours??'Verify units'}/></label>
+     {([{k:'units_override',l:'Approved units notation (optional)'},{k:'lec',l:'Lecture contact hours'},{k:'lab',l:'Lab contact hours'},{k:'rle',l:'RLE hours'},{k:'male',l:'Male students'},{k:'female',l:'Female students'}] as const).map(x=><label key={x.k}>{x.l}<input type={x.k==='units_override'?'text':'number'} min={x.k==='units_override'?undefined:0} step={x.k==='male'||x.k==='female'?1:'0.5'} value={courseDraft[x.k]||''} onChange={e=>setCourse(x.k,e.target.value)}/></label>)}
     </div>
     <label>Administrator justification<input minLength={10} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Verified teaching load against approved PSU faculty workload guidance"/></label>
     <div className="availability-dialog-actions"><button className="primary" disabled={busy||reason.trim().length<10} onClick={()=>void saveCourse()}>Save workload entry</button><button className="ghost" onClick={()=>setCourseDraft({})}>Cancel</button></div>
@@ -318,8 +355,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
      <p className="curriculum-note">Approved equivalent hours are shown separately from actual weekly teaching time. No unverified workload hours are assumed.</p>
      <div className="workload-summary-grid">
       <div><span>Scheduled teaching time</span><strong>{rows.length?String((rows.reduce((n,r)=>n+r.weeklyMinutes,0)/60).toFixed(1))+' hrs/wk':'Not available'}</strong></div>
-      <div><span>Regular teaching WHE</span><strong>{rows.filter(r=>(r.w?.load_category||'regular')==='regular').length&&rows.filter(r=>(r.w?.load_category||'regular')==='regular').every(r=>r.w?.whe!=null)?String(rows.filter(r=>(r.w?.load_category||'regular')==='regular').reduce((n,r)=>n+(r.w?.whe??0),0)):'Pending verification'}</strong></div>
-      <div><span>Extra teaching WHE</span><strong>{rows.filter(r=>r.w?.load_category==='extra').length&&rows.filter(r=>r.w?.load_category==='extra').every(r=>r.w?.whe!=null)?String(rows.filter(r=>r.w?.load_category==='extra').reduce((n,r)=>n+(r.w?.whe??0),0)):'—'}</strong></div>
+      <div><span>Regular teaching WHE</span><strong>{regularCreditedHours===null?'Pending verification':String(regularCreditedHours)}</strong></div>
+      <div><span>Extra teaching WHE</span><strong>{extraCreditedHours===null?'Pending verification':String(extraCreditedHours)}</strong></div>
       {WORKLOAD_GROUPS.map(g=><div key={g.key}><span>{g.name} WHE</span><strong>{details[g.hours]!==''?details[g.hours]:'Pending verification'}</strong></div>)}
      </div>
     </div>}
@@ -334,7 +371,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     <p className="curriculum-note"><strong>University template:</strong> {template?'Ready for automatic generation':'Loading or unavailable'}.</p>
     {masterError&&<div className="notice" role="alert">{masterError}</div>}
     {!published&&<p className="curriculum-note">The semester timetable is not yet published. The generated Word document will be marked as a draft.</p>}
-    {rows.some(r=>!r.w)&&<p className="curriculum-note">Some course workload equivalencies have not been verified. These will remain blank, and unclassified courses will appear under regular load as a provisional grouping until reviewed.</p>}
+    {rows.some(r=>!r.w)&&<p className="curriculum-note">Workload categories and credited hours are computed from approved course schedules. Missing course units remain blank until verified.</p>}
     <button className="primary" type="button" disabled={busy||!template||!fac||rows.length===0} onClick={()=>void download()}>{busy?'Generating…':'Generate Faculty Workload (.docx)'}</button>
     <p className="curriculum-note">The file is editable. Official workload equivalents, missing counts, signatories and approvals still require review.</p>
    </div>
