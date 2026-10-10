@@ -942,3 +942,14 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .admin-report-status.inreview{background:#dceeff;color:#1a5e95}
 .admin-report-status.requested{background:#fff0dd;color:#98551d}
 @media(max-width:700px){.admin-report-controls{display:grid;grid-template-columns:1fr}.admin-report-controls .primary{width:100%}}
+
+
+/* Configured campus workload computation */
+.workload-policy-note{border:1px solid #d7e5f1;border-left:4px solid #2472a4;background:#f0f7fd;border-radius:.8rem;padding:1rem;color:#2b5475;margin:.8rem 0}
+.workload-policy-note strong{color:#134d78}
+.workload-policy-note p{margin:.45rem 0;font-size:.87rem;line-height:1.6}
+.workload-policy-metrics{margin:1rem 0}
+.workload-policy-metrics strong{font-variant-numeric:tabular-nums}
+.workload-regular-tag,.workload-extra-tag{display:inline-block;font-size:.78rem;font-weight:700;padding:.3rem .55rem;border-radius:999px;white-space:nowrap}
+.workload-regular-tag{background:#e6f2fc;color:#175887}
+.workload-extra-tag{background:#ffebdc;color:#98521a}
