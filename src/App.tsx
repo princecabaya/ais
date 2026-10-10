@@ -5,6 +5,7 @@ import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
 import { FacultyAvailability } from './FacultyAvailability';
+import { RoomScheduling } from './RoomScheduling';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -290,6 +291,7 @@ export function App() {
             </div>
             <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
+            <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             {profile.role === 'admin' && (
               <>
               <CurriculumManagement />
