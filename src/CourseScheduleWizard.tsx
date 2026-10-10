@@ -13,9 +13,9 @@ const STARTS=[450,540,630,780,870,960,1050];
 const clock=(n:number)=>{const h=Math.floor(n/60);return `${((h+11)%12)+1}:${String(n%60).padStart(2,'0')} ${h>=12?'PM':'AM'}`};
 const meetingDays=(p:string,day:number)=>p==='MW'?[1,3]:p==='TTH'?[2,4]:p==='NSTP'?[5]:[day];
 export function CourseScheduleWizard({code,title,block,units,rank:initialRank,motivation:initialMotivation,busy,submissionError,onClose,onSubmit}:Props){
- const kind=useMemo(()=>{const normalized=code.toUpperCase().replace(/\s+/g,'');return normalized.startsWith('NSTP')?'NSTP':normalized.startsWith('PATHFIT')?'PATHFIT':units===3?'STANDARD':'SPECIAL'},[code,units,title]);
+ const kind=useMemo(()=>{if(/field study|internship|practicum/i.test(title))return 'FIELD';const normalized=code.toUpperCase().replace(/\s+/g,'');return normalized.startsWith('NSTP')?'NSTP':normalized.startsWith('PATHFIT')?'PATHFIT':units===3?'STANDARD':'SPECIAL'},[code,units,title]);
  const [step,setStep]=useState(1);
- const [pattern,setPattern]=useState<'MW'|'TTH'|'PATHFIT'|'NSTP'>(kind==='FIELD'?'FIELD':kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':'MW');
+ const [pattern,setPattern]=useState<'MW'|'TTH'|'PATHFIT'|'NSTP'|'FIELD'>(kind='FIELD'?'FIELD':kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':'MW');
  const [weekday,setWeekday]=useState(1);
  const [start,setStart]=useState(450);
  const [venueId,setVenueId]=useState(0);
