@@ -38,9 +38,8 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
    supabase.from('faculty_course_requests').select('id,academic_term_id,course_offering_id,faculty_id,preference_rank,motivation,status,requested_at,decision_note,decided_at').order('requested_at',{ascending:false}),
    supabase.from('faculty_notifications').select('id,title,body,created_at').order('created_at',{ascending:false}).limit(6)
   ];
-  if(isAdmin)calls.push(supabase.from('profiles').select('id,first_name,last_name,department,employment_type'));
-  const results=await Promise.all(calls);
-  const error=results.find(r=>r.error)?.error;
+  const [results,people]=await Promise.all([Promise.all(calls),isAdmin?supabase.from('profiles').select('id,first_name,last_name,department,employment_type'):Promise.resolve(null)]);
+  const error=results.find(r=>r.error)?.error || people?.error;
   if(error)setMessage(error.message);
   else{
    setTerms(results[0].data as Term[]||[]);
@@ -49,7 +48,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
    setOfferings(results[3].data as Offering[]||[]);
    setRequests(results[4].data as Request[]||[]);
    setNotices(results[5].data as Notice[]||[]);
-   if(isAdmin)setFaculty(results[6].data as Faculty[]||[]);
+   if(isAdmin)setFaculty((people?.data || []) as Faculty[]);
   }
   setLoading(false);
  },[isAdmin]);
