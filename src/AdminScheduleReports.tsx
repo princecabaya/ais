@@ -16,6 +16,7 @@ type RoomRow={venue:string;day:number;start:number;end:number;course:string;bloc
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const clock=(n:number)=>{const h=Math.floor(n/60),m=String(n%60).padStart(2,'0');return `${((h+11)%12)+1}:${m} ${h<12?'AM':'PM'}`};
 const dayLabel=(p:string|null,d:number|null)=>{
+ if(p==='FIELD')return 'Field placement · no fixed session';
  if(p==='MW')return 'Mon/Wed';
  if(p==='TTH')return 'Tue/Thu';
  if(p==='NSTP')return 'Friday';
@@ -125,8 +126,8 @@ export function AdminScheduleReports(){
    return {
     faculty:name(r.faculty_id),department:fmap.get(r.faculty_id)?.department||'—',
     course:c?.course_code||'—',title:c?.course_title||'Untitled course',block:block?.block_label||'Block',
-    days:desc,time:start===null||end===null?'Not selected':clock(start)+' – '+clock(end),
-    venue:where||'Not selected',status,sortKey:name(r.faculty_id),facultyId:r.faculty_id
+    days:desc,time:r.preferred_pattern==='FIELD'&&!approvedSchedule?'No fixed weekly hours':start===null||end===null?'Not selected':clock(start)+' – '+clock(end),
+    venue:r.preferred_pattern==='FIELD'&&!approvedSchedule?'No room required':where||'Not selected',status,sortKey:name(r.faculty_id),facultyId:r.faculty_id
    };
   }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey)||a.block.localeCompare(b.block,undefined,{numeric:true})||a.course.localeCompare(b.course));
   const roomRows:RoomRow[]=meetings.filter(m=>m.academic_term_id===term?.id).map(m=>{
