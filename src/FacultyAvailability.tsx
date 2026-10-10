@@ -25,7 +25,6 @@ export function FacultyAvailability({facultyId,isAdmin}:{facultyId:string;isAdmi
  const [overrides,setOverrides]=useState<Override[]>([]);
  const [faculty,setFaculty]=useState<Faculty[]>([]);
  const [viewFaculty,setViewFaculty]=useState(facultyId);
- const [note,setNote]=useState('');
  const [editing,setEditing]=useState<{day:number;slot:number}|null>(null);
  const [overrideTarget,setOverrideTarget]=useState<{day:number;slot:number}|null>(null);
  const [justification,setJustification]=useState('');
@@ -87,7 +86,7 @@ export function FacultyAvailability({facultyId,isAdmin}:{facultyId:string;isAdmi
   return <div className="availability-cell" key={key(day,slot)}>
    <button type="button" title={own?'Change your availability':labels[preference]} disabled={!own||busy}
     className={'availability-choice status-'+preference+(exception?' overridden':'')}
-    onClick={()=>{setEditing({day,slot});setNote(prefs.get(key(day,slot))?.note||'')}}>
+    onClick={()=>{setEditing({day,slot})}}>
     <span>{labels[preference]}</span>
     {exception&&<small>Override recorded</small>}
    </button>
