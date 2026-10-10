@@ -7,6 +7,7 @@ import { CourseSelection } from './CourseSelection';
 import { FacultyAvailability } from './FacultyAvailability';
 import { RoomScheduling } from './RoomScheduling';
 import { AdministratorApproval } from './AdministratorApproval';
+import { OfficialWorkload } from './OfficialWorkload';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -288,11 +289,12 @@ export function App() {
             <div className="cards">
               <article><BookOpen /><strong>Course preferences</strong><p>Select courses across BEEd and BSE, rank preferences, and submit for administrative approval.</p><span>Available below</span></article>
               <article><CalendarDays /><strong>Faculty availability</strong><p>Set preferred and unavailable teaching periods and review authorized exceptions.</p><span>Available below</span></article>
-              <article><ClipboardList /><strong>Official workload</strong><p>Administrator-approved teaching assignments and editable FWL Word exports.</p><span>Coming in later phase</span></article>
+              <article><ClipboardList /><strong>Official workload</strong><p>Export editable PSU-ACA-031 Word documents from approved course schedules.</p><span>Available below</span></article>
             </div>
             <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
+            <OfficialWorkload facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             {profile.role === 'admin' && (
               <>
               <AdministratorApproval />
