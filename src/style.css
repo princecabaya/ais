@@ -734,3 +734,59 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .workspace-next>.primary{margin-left:auto}
 .workspace-done{color:#66829b;font-size:.87rem}
 @media(max-width:720px){.workspace-nav{top:0;padding:.75rem}.workspace-nav-title{flex-direction:column;align-items:flex-start;gap:.1rem}.workspace-tab{padding:.65rem .75rem;font-size:.83rem}}
+
+
+/* Consistent geometry for signed-in and sign-in layouts */
+#root{width:100%}
+.app{width:100%;max-width:1220px;margin-inline:auto;padding-inline:clamp(16px,2.5vw,28px)}
+.app > header,.app > main,.app > footer,.app main > .hero,.app main > .dashboard{width:100%;min-width:0;max-width:100%}
+.app > header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;column-gap:1.5rem;row-gap:.8rem}
+.app > header .brand{min-width:0;flex:1 1 350px}
+.app > header .brand > div:last-child{min-width:0}
+.app > header .brand strong{overflow-wrap:anywhere}
+.app > header .topright{margin-left:auto;flex:0 0 auto;max-width:100%}
+.app > main{grid-template-columns:minmax(0,1fr)}
+.app .hero,.app .dashboard,.app .panel{min-width:0}
+.app .hero{width:100%;padding:clamp(1.5rem,3vw,2.25rem)}
+.app .hero h1{max-width:850px;letter-spacing:-.025em}
+.app .welcome{align-items:center;flex-wrap:wrap}
+.app .welcome > div:first-child{flex:1 1 350px;min-width:0}
+.app .welcome .status{flex:0 0 auto}
+.app .workspace-nav{min-width:0}
+.app .workspace-nav-title{align-items:baseline;flex-wrap:wrap}
+.app .workspace-nav-tabs{gap:.5rem}
+.app .workspace-content{min-width:0;width:100%}
+.app .workspace-content > .panel{width:100%;margin-inline:0}
+.app .auth{width:100%;max-width:540px;justify-self:center;margin-inline:auto}
+.app .auth > form,.app .auth .link-confirmation{width:100%;min-width:0}
+.app .auth form > button.primary{width:100%}
+.app .features{min-width:0;width:100%}
+.app footer{min-width:0}
+.app--signed-in .hero{padding-block:1.5rem}
+.app--signed-in .hero-badge{margin-bottom:.7rem}
+.app--signed-in .hero h1{font-size:clamp(1.7rem,3vw,2.6rem)}
+.app--signed-in .hero p{font-size:.94rem;max-width:800px}
+@media (max-width:900px){
+ .app > header{flex-direction:row;align-items:center}
+ .app > header .topright{width:auto;margin-left:auto;justify-content:flex-end}
+ .app .workspace-nav-tabs{scroll-snap-type:x proximity}
+ .app .workspace-tab{scroll-snap-align:start}
+}
+@media (max-width:600px){
+ .app{padding-inline:12px}
+ .app > header{gap:.75rem;padding:.8rem}
+ .app > header .brand{flex:1 1 100%;gap:.65rem}
+ .app > header .topright{flex:1 1 100%;margin-left:0;justify-content:space-between}
+ .app .logo-wrap{width:54px;height:54px;flex-shrink:0}
+ .app .brand-logo{width:47px;height:47px}
+ .app .brand strong{font-size:.85rem;letter-spacing:.03em}
+ .app .brand small{font-size:.73rem}
+ .app .hero{padding:1.35rem}
+ .app .hero h1{font-size:clamp(1.6rem,7vw,2.25rem)}
+ .app .dashboard{padding:1rem}
+ .app .workspace-nav{padding:.65rem}
+ .app .welcome .status{margin-left:0}
+ .app .auth{max-width:none}
+ .app .features{grid-template-columns:1fr}
+ .app footer{flex-direction:column;align-items:flex-start}
+}
