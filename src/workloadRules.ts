@@ -11,28 +11,29 @@ export type WorkloadInput={
  units:number|null;weeklyTeachingHours:number;sortKey:string;
 };
 export type WorkloadResult=WorkloadInput&{
- position:number;category:'regular'|'extra';preparationKey:number;
+ position:number;category:'regular'|'extra';preparationKey:string;
  sharedPreparation:boolean;preparationHours:number;bonusHours:number;
  creditedHours:number|null;teachingHours:number;note:string;
 };
 export function calculateFacultyWorkload(entries:WorkloadInput[],fullTime:boolean):WorkloadResult[]{
  const ordered=[...entries].sort((a,b)=>a.sortKey.localeCompare(b.sortKey)||a.id-b.id);
- const counted=new Set<number>();
+ const counted=new Set<string>();
  return ordered.map((entry,index)=>{
   const position=index+1;
   const regular=fullTime&&position<=6;
   const category=fullTime&&!regular?'extra':'regular';
-  const samePreparation=regular&&counted.has(entry.curriculumCourseId);
+  const preparationKey=entry.courseCode.replace(/\\s+/g,'').toUpperCase()||String(entry.curriculumCourseId);
+  const samePreparation=regular&&counted.has(preparationKey);
   const units=entry.units;
   const teachingHours=entry.weeklyTeachingHours;
   const valid=units!==null&&Number.isFinite(units)&&units>=0;
   // The slot's actual teaching duration always counts. Preparation is credited only once
   // per distinct curriculum subject within the first six regular sections.
   const preparationHours=regular&&valid&&!samePreparation?units!:0;
-  if(regular&&!samePreparation)counted.add(entry.curriculumCourseId);
+  if(regular&&!samePreparation)counted.add(preparationKey);
   const bonusHours=regular&&position>=5&&position<=6&&valid&&!samePreparation?2:0;
   const creditedHours=valid?Number((teachingHours+preparationHours+bonusHours).toFixed(2)):null;
-  return {...entry,position,category,preparationKey:entry.curriculumCourseId,
+  return {...entry,position,category,preparationKey,
    sharedPreparation:samePreparation,preparationHours,bonusHours,creditedHours,teachingHours,
    note:!valid?'Verify course units before computing WHE':
     category==='extra'?'Extra load: teaching only, no preparation credit':
