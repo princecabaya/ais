@@ -677,3 +677,14 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .course-wizard-footer{display:flex;justify-content:space-between;gap:1rem;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #dfebf4}
 .course-wizard-footer button{min-width:120px}
 @media(max-width:650px){.course-wizard{max-height:94vh;padding:1rem}.wizard-time-grid,.wizard-room-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wizard-review>div{grid-template-columns:1fr;gap:.1rem}.course-wizard-steps span{font-size:.72rem}}
+
+
+/* Academic term controls and reusable official workload master */
+.term-settings{background:linear-gradient(180deg,#fff,#edf5fc)}
+.term-setting-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:1rem;align-items:end}
+.term-setting-fields button{align-self:end}
+.workload-master-manager{display:grid;gap:.7rem;background:#fff;border:1px solid #d8e6f1;padding:1rem;border-radius:1rem}
+.workload-master-manager>.ghost{justify-self:start}
+.workload-master-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.75rem;align-items:end}
+.workload-master-controls button{align-self:end}
+@media(max-width:740px){.term-setting-fields,.workload-master-controls{grid-template-columns:1fr}}
