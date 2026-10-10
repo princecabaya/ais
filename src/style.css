@@ -367,7 +367,7 @@ select:focus {
 .inviteform {
   display: grid;
   gap: 1rem;
-  grid-template-columns: 2fr 1fr auto;
+  grid-template-columns: 2fr 1fr 1fr auto;
   align-items: end;
   margin: 1rem 0 1.15rem;
 }
