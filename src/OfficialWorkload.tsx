@@ -67,7 +67,7 @@ function setParagraph(par:Element|undefined,value:string){
 }
 type ExportCourse={code:string;title:string;section:string;units:string;room:string;time:string;days:string;whe:number|null;lec:number|null;lab:number|null;rle:number|null;male:number|null;female:number|null;category:'regular'|'extra'};
 const blank=(n:number|null)=>n===null?'':String(n);
-const sumOrBlank=(a:Array<number|null>)=>a.length>0&&a.every(x=>x!==null)?String(a.reduce<number>((s,n)=>s+(n??0),0)):'';
+const sumOrBlank=(a:Array<number|null>)=>a.length===0?'0':a.every(x=>x!==null)?String(a.reduce<number>((s,n)=>s+(n??0),0)):'';
 async function exportUsingTemplate(template:File,faculty:Faculty,term:Term,entries:ExportCourse[],details:Record<string,string>,official:boolean){
  const zip=await JSZip.loadAsync(template);
  const entry=zip.file('word/document.xml');if(!entry)throw Error('This is not a valid .docx document');
@@ -103,7 +103,6 @@ async function exportUsingTemplate(template:File,faculty:Faculty,term:Term,entri
  clearAndFill(tables[3],2,3,extra.map(row));
  const regularTotal=sumOrBlank(regular.map(e=>e.whe));
  const extraTotal=sumOrBlank(extra.map(e=>e.whe));
- put(tables[2],8,1,regularTotal); // after insertion row shifts; overwritten below using last two rows
  const regRows=children(tables[2],'tr');
  setCell(children(regRows[regRows.length-2],'tc')[1],regularTotal);
  const extraRows=children(tables[3],'tr');
