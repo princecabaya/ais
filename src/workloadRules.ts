@@ -1,6 +1,6 @@
 /** Campus scheduling workload policy configured for this AIS implementation.
  * Full-time: first six sections are regular; all subsequent sections are extra.
- * Preparations are grouped by curriculum course id (same subject taught to multiple blocks).
+ * Preparations are grouped by normalized course code (same subject taught to multiple blocks).
  * 5th and 6th regular sections receive 1 additional *credit unit*, equivalent
  * to 2 credited weekly hours, only when they introduce a new preparation.
  * Extra load receives teaching hours only: no preparation credits or multiplier.
@@ -22,7 +22,7 @@ export function calculateFacultyWorkload(entries:WorkloadInput[],fullTime:boolea
   const position=index+1;
   const regular=fullTime&&position<=6;
   const category=fullTime&&!regular?'extra':'regular';
-  const preparationKey=entry.courseCode.replace(/\\s+/g,'').toUpperCase()||String(entry.curriculumCourseId);
+  const preparationKey=entry.courseCode.replace(/\s+/g,'').toUpperCase()||String(entry.curriculumCourseId);
   const samePreparation=regular&&counted.has(preparationKey);
   const units=entry.units;
   const teachingHours=entry.weeklyTeachingHours;
