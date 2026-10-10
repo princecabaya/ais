@@ -5,6 +5,7 @@ import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
 import { FacultyAvailability } from './FacultyAvailability';
+import { SchedulePreview } from './SchedulePreview';
 import { RoomScheduling } from './RoomScheduling';
 import { AdministratorApproval } from './AdministratorApproval';
 import { OfficialWorkload } from './OfficialWorkload';
@@ -294,6 +295,7 @@ export function App() {
             </div>
             {profile.role === 'admin' && <AcademicTermSettings />}
             <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
+            <SchedulePreview facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             <OfficialWorkload facultyId={profile.id} isAdmin={profile.role === 'admin'} />
