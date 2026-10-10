@@ -214,7 +214,7 @@ export function App() {
           </div>
         </div>
         <div className="topright">
-          <span className="pill">AY 2026–2027</span>
+          {session && profile && <span className="pill">AY 2026–2027</span>}
           {session && (
             <button className="ghost" onClick={logout}>
               <LogOut size={16} /> Sign out
@@ -226,7 +226,6 @@ export function App() {
       <main>
         <section className="hero">
           <div className="hero-badge">
-            <img src={PSU_LOGO} alt="Palawan State University seal" className="hero-logo" />
             <span className="kicker">INDEPENDENT ACADEMIC PORTAL</span>
           </div>
           <h1>Faculty Course Selection<br /><em>& Scheduling System</em></h1>
