@@ -289,7 +289,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
    <div className="workload-summary-grid workload-policy-metrics">
     <div><span>Regular course sections</span><strong>{regularCourses.length}</strong></div>
     <div><span>Extra course sections</span><strong>{extraCourses.length}</strong></div>
-    <div><span>Regular credited hours</span><strong>{regularCreditedHours===null?'Verify units':regularCreditedHours.toFixed(1)+' / '+FULL_TIME_WEEKLY_TARGET}</strong></div>
+    <div><span>Regular credited hours</span><strong>{regularCreditedHours===null?'Verify units':regularCreditedHours.toFixed(1)+(fullTime?' / '+FULL_TIME_WEEKLY_TARGET:' hrs')}</strong></div>
     <div><span>Extra teaching hours (not doubled)</span><strong>{extraCreditedHours===null?'Verify units':extraCreditedHours.toFixed(1)}</strong></div>
     <div><span>Shared preparations</span><strong>{sharedPreparations}</strong></div>
    </div>
