@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { BookOpen, CalendarDays, CheckCircle2, ClipboardList, LogOut, Mail, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { configured, domainOk, supabase } from './supabase';
 import { PSU_LOGO } from './psuLogo';
+import { CurriculumManagement } from './CurriculumManagement';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -286,6 +287,7 @@ export function App() {
               <article><ClipboardList /><strong>Official workload</strong><p>Administrator-approved teaching assignments and editable FWL Word exports.</p><span>Coming in later phase</span></article>
             </div>
             {profile.role === 'admin' && (
+              <CurriculumManagement />
               <div className="panel admin">
                 <div className="iconhead"><ShieldCheck /><span>Administrator · Faculty authorization</span></div>
                 <p>Only the listed PSU email accounts may begin confirmation-link registration.</p>
