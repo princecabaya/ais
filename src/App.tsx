@@ -37,6 +37,10 @@ const normal = (value: string) => value.toUpperCase().trim().replace(/\s+/g, ' '
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [workspaceTab, setWorkspaceTab] = useState('courses');
+  function showWorkspaceTab(id: string) {
+    setWorkspaceTab(id);
+    window.requestAnimationFrame(() => document.querySelector('.workspace-nav')?.scrollIntoView({behavior:'smooth',block:'start'}));
+  }
   const [profile, setProfile] = useState<Profile | null>(null);
   const [step, setStep] = useState<'email' | 'link-sent' | 'password' | 'profile'>('email');
   const [email, setEmail] = useState('');
@@ -311,7 +315,7 @@ export function App() {
                   <button key={id} type="button"
                     aria-current={workspaceTab===id ? 'step' : undefined}
                     className={workspaceTab===id ? 'workspace-tab active' : 'workspace-tab'}
-                    onClick={()=>setWorkspaceTab(id)}>
+                    onClick={()=>showWorkspaceTab(id)}>
                     <Icon size={16}/>{label}
                   </button>
                 ))}
@@ -353,13 +357,13 @@ export function App() {
               {workspaceTab !== 'courses' && (
                 <button type="button" className="ghost" onClick={()=>{
                   const order=['courses','preview','availability','scheduling','workload'];
-                  const i=order.indexOf(workspaceTab);setWorkspaceTab(i>0?order[i-1]:'courses');
+                  const i=order.indexOf(workspaceTab);showWorkspaceTab(i>0?order[i-1]:'courses');
                 }}>← Previous step</button>
               )}
               {['courses','preview','availability','scheduling'].includes(workspaceTab) && (
                 <button type="button" className="primary" onClick={()=>{
                   const order=['courses','preview','availability','scheduling','workload'];
-                  setWorkspaceTab(order[order.indexOf(workspaceTab)+1]);
+                  showWorkspaceTab(order[order.indexOf(workspaceTab)+1]);
                 }}>Continue to {({courses:'Schedule Preview',preview:'Faculty Availability',availability:'Schedule & Rooms',scheduling:'Faculty Workload'} as Record<string,string>)[workspaceTab]} →</button>
               )}
               {workspaceTab === 'workload' && <span className="workspace-done">End of faculty workflow · You can return to any previous step using the tabs above.</span>}
