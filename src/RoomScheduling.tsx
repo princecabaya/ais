@@ -92,7 +92,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
  };
  async function submit(e:FormEvent){
   e.preventDefault();if(!supabase||!selected)return;setBusy(true);setMessage('');
-  const {error}=await supabase.rpc('submit_schedule_proposal',{p_course_request_id:selected.id,p_venue_id:Number(venue),p_pattern:effectivePattern,p_start_minute:start,p_pathfit_day:effectivePattern==='PATHFIT'?pathDay:null});
+  const {error}=await supabase.rpc('submit_schedule_proposal',{p_course_request_id:selected.id,p_venue_id:Number(venue),p_pattern:effectivePattern,p_start_minute:permittedTimes.includes(start)?start:(permittedTimes[0]??450),p_pathfit_day:effectivePattern==='PATHFIT'?pathDay:null});
   if(error)setMessage(error.message);
   else{setMessage('Schedule proposal submitted. Administrator approval is required.');await load();}
   setBusy(false);
