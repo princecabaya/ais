@@ -6,13 +6,13 @@ type Availability={weekday:number;slot_index:number;preference:string};
 export type ScheduleChoice={pattern:'MW'|'TTH'|'PATHFIT'|'NSTP';start:number;day:number|null;venueId:number};
 type Props={
  code:string;title:string;block:string;units:number|null;rank:number;motivation:string;
- busy:boolean;onClose:()=>void;onSubmit:(choice:ScheduleChoice,rank:number,motivation:string)=>Promise<void>
+ busy:boolean;submissionError:string;onClose:()=>void;onSubmit:(choice:ScheduleChoice,rank:number,motivation:string)=>Promise<void>
 };
 const DAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const STARTS=[450,540,630,780,870,960,1050];
 const clock=(n:number)=>{const h=Math.floor(n/60);return `${((h+11)%12)+1}:${String(n%60).padStart(2,'0')} ${h>=12?'PM':'AM'}`};
 const meetingDays=(p:string,day:number)=>p==='MW'?[1,3]:p==='TTH'?[2,4]:p==='NSTP'?[5]:[day];
-export function CourseScheduleWizard({code,title,block,units,rank:initialRank,motivation:initialMotivation,busy,onClose,onSubmit}:Props){
+export function CourseScheduleWizard({code,title,block,units,rank:initialRank,motivation:initialMotivation,busy,submissionError,onClose,onSubmit}:Props){
  const kind=useMemo(()=>{const normalized=code.toUpperCase().replace(/\s+/g,'');return normalized.startsWith('NSTP')?'NSTP':normalized.startsWith('PATHFIT')?'PATHFIT':units===3?'STANDARD':'SPECIAL'},[code,units]);
  const [step,setStep]=useState(1);
  const [pattern,setPattern]=useState<'MW'|'TTH'|'PATHFIT'|'NSTP'>(kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':'MW');
@@ -82,6 +82,7 @@ export function CourseScheduleWizard({code,title,block,units,rank:initialRank,mo
     <label>Teaching qualifications or special considerations (optional)<textarea maxLength={1000} value={motivation} onChange={e=>setMotivation(e.target.value)} rows={3} placeholder="Relevant qualifications or teaching experience"/></label>
     <p className="wizard-info">Submitting requests the course, schedule, and venue. The administrator approves the course first, then reviews the proposed schedule and room.</p>
    </form>}
+   {submissionError&&<p className="wizard-warning" role="alert">{submissionError}</p>}
    <div className="course-wizard-footer"><button type="button" className="ghost" onClick={()=>step===1?onClose():setStep(step-1)} disabled={busy}>{step===1?'Cancel':'Back'}</button>{step<3?<button type="button" className="primary" disabled={kind==='SPECIAL'||(step===2&&!venueId)} onClick={()=>setStep(step+1)}>Next: {step===1?'Select room':'Review request'}</button>:<button type="submit" form="course-wizard-submit" className="primary" disabled={busy||!venueId}>{busy?'Submitting…':'Submit course preference'}</button>}</div>
   </div>
  </div>;
