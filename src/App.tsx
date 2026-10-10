@@ -287,6 +287,7 @@ export function App() {
               <article><ClipboardList /><strong>Official workload</strong><p>Administrator-approved teaching assignments and editable FWL Word exports.</p><span>Coming in later phase</span></article>
             </div>
             {profile.role === 'admin' && (
+              <>
               <CurriculumManagement />
               <div className="panel admin">
                 <div className="iconhead"><ShieldCheck /><span>Administrator · Faculty authorization</span></div>
@@ -307,6 +308,7 @@ export function App() {
                   )) : <p>No invitations yet. Add your first faculty email.</p>}
                 </div>
               </div>
+              </>
             )}
           </section>
         )}
