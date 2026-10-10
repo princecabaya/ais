@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { supabase } from './supabase';
+import { CourseScheduleWizard, type ScheduleChoice } from './CourseScheduleWizard';
 
 type Section={id:string;block_label:string;program:string;year_level:number;track:string|null};
 type Course={id:number;course_code:string;course_title:string;units:number|null;verification_status:string};
 type Offering={id:number;academic_term_id:number;class_section_id:string;curriculum_course_id:number;status:string};
 type Term={id:number;academic_year:string;semester:number;is_active:boolean};
-type Request={id:number;academic_term_id:number;course_offering_id:number;faculty_id:string;preference_rank:number;motivation:string|null;status:'pending'|'approved'|'rejected'|'withdrawn';requested_at:string;decision_note:string|null;decided_at:string|null};
+type Request={id:number;academic_term_id:number;course_offering_id:number;faculty_id:string;preference_rank:number;motivation:string|null;status:'pending'|'approved'|'rejected'|'withdrawn';requested_at:string;decision_note:string|null;decided_at:string|null;preferred_pattern:string|null;preferred_start_minute:number|null;preferred_pathfit_weekday:number|null;preferred_venue_id:number|null};
+type Venue={id:number;name:string};
 type Faculty={id:string;first_name:string;last_name:string;department:string;employment_type:string};
 type Notice={id:number;title:string;body:string;created_at:string};
 
@@ -21,7 +23,8 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
  const [section,setSection]=useState('ALL');
  const [year,setYear]=useState('ALL');
  const [sortBy,setSortBy]=useState<'block'|'code'|'title'>('block');
- const [expandedOffering,setExpandedOffering]=useState<number|null>(null);
+ const [selectedCourseId,setSelectedCourseId]=useState<number|null>(null);
+ const [venues,setVenues]=useState<Venue[]>([]);
  const [collapsedBlocks,setCollapsedBlocks]=useState<string[]>([]);
  const [search,setSearch]=useState('');
  const [rank,setRank]=useState<Record<number,number>>({});
@@ -39,8 +42,9 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
    supabase.from('class_sections').select('id,block_label,program,year_level,track').eq('active',true),
    supabase.from('curriculum_courses').select('id,course_code,course_title,units,verification_status'),
    supabase.from('course_offerings').select('id,academic_term_id,class_section_id,curriculum_course_id,status'),
-   supabase.from('faculty_course_requests').select('id,academic_term_id,course_offering_id,faculty_id,preference_rank,motivation,status,requested_at,decision_note,decided_at').order('requested_at',{ascending:false}),
-   supabase.from('faculty_notifications').select('id,title,body,created_at').order('created_at',{ascending:false}).limit(6)
+   supabase.from('faculty_course_requests').select('id,academic_term_id,course_offering_id,faculty_id,preference_rank,motivation,status,requested_at,decision_note,decided_at,preferred_pattern,preferred_start_minute,preferred_pathfit_weekday,preferred_venue_id').order('requested_at',{ascending:false}),
+   supabase.from('faculty_notifications').select('id,title,body,created_at').order('created_at',{ascending:false}).limit(6),
+   supabase.from('schedule_venues').select('id,name').eq('active',true)
   ];
   const [results,people]=await Promise.all([Promise.all(calls),isAdmin?supabase.from('profiles').select('id,first_name,last_name,department,employment_type'):Promise.resolve(null)]);
   const error=results.find(r=>r.error)?.error || people?.error;
@@ -52,6 +56,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
    setOfferings(results[3].data as Offering[]||[]);
    setRequests(results[4].data as Request[]||[]);
    setNotices(results[5].data as Notice[]||[]);
+   setVenues(results[6].data as Venue[]||[]);
    if(isAdmin)setFaculty((people?.data || []) as Faculty[]);
   }
   setLoading(false);
@@ -83,12 +88,25 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
  const choiceGroups=sections.filter(sec=>choices.some(o=>o.class_section_id===sec.id)).sort((a,b)=>a.program.localeCompare(b.program)||a.year_level-b.year_level||a.block_label.localeCompare(b.block_label,undefined,{numeric:true})).map(sec=>({section:sec,items:choices.filter(o=>o.class_section_id===sec.id)}));
  function myLive(id:number){return myRequests.find(r=>r.course_offering_id===id&&(r.status==='pending'||r.status==='approved'))}
  function allocated(id:number){return requests.some(r=>r.course_offering_id===id&&r.status==='approved')}
- async function requestCourse(e:FormEvent,id:number){
-  e.preventDefault();if(!supabase)return;setBusy(true);setMessage('');
-  const {error}=await supabase.rpc('request_course_preference',{p_offering_id:id,p_rank:rank[id]||1,p_motivation:motivation[id]?.trim()||null});
-  if(error)setMessage(error.message);else{setMessage('Preference submitted for administrator consideration. No teaching assignment has been made yet.');await load();}
+ async function requestCourseWithSchedule(id:number,choice:ScheduleChoice,priority:number,note:string){
+  if(!supabase)return;setBusy(true);setMessage('');
+  const {error}=await supabase.rpc('request_course_with_schedule',{
+   p_offering_id:id,p_rank:priority,p_motivation:note||null,
+   p_pattern:choice.pattern,p_start_minute:choice.start,p_venue_id:choice.venueId,p_pathfit_day:choice.day
+  });
+  if(error)setMessage(error.message);
+  else{setMessage('Course, schedule and preferred room submitted for approval. No room has been reserved.');setSelectedCourseId(null);await load();}
   setBusy(false);
  }
+ const chosenOffering=offerings.find(o=>o.id===selectedCourseId);
+ const chosenCourse=chosenOffering?courseById.get(chosenOffering.curriculum_course_id):undefined;
+ const chosenSection=chosenOffering?sectionById.get(chosenOffering.class_section_id):undefined;
+ const timeLabel=(r:Request)=>{
+  if(!r.preferred_pattern||r.preferred_start_minute===null)return 'No meeting preference recorded';
+  const days=r.preferred_pattern==='MW'?'Mon/Wed':r.preferred_pattern==='TTH'?'Tue/Thu':r.preferred_pattern==='NSTP'?'Friday':['','Monday','Tuesday','Wednesday','Thursday','Friday'][r.preferred_pathfit_weekday||0]||'Weekday';
+  const h=(n:number)=>{const hr=Math.floor(n/60);return ((hr+11)%12+1)+':'+String(n%60).padStart(2,'0')+(hr>=12?' PM':' AM')};
+  return days+' · '+h(r.preferred_start_minute)+' · '+(venues.find(v=>v.id===r.preferred_venue_id)?.name||'Venue');
+ };
  async function withdraw(id:number){
   if(!supabase||!window.confirm('Withdraw this pending course preference?'))return;
   setBusy(true);setMessage('');
@@ -123,9 +141,9 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
   </div>
   {loading?<p>Loading current course offerings…</p>:tab==='browse'?<>
    <div className="selection-browser">
-    <div className="selection-browser-heading"><div><h3>Find your teaching subjects</h3><p>Choose a program and year level, then open a student block. Each block is requested independently.</p></div><button type="button" className="ghost" onClick={()=>{setProgram('ALL');setYear('ALL');setSection('ALL');setSearch('');setSortBy('block');setCollapsedBlocks([]);setExpandedOffering(null)}}>Reset filters</button></div>
+    <div className="selection-browser-heading"><div><h3>Find your teaching subjects</h3><p>Choose a program and year level, then open a student block. Each block is requested independently.</p></div><button type="button" className="ghost" onClick={()=>{setProgram('ALL');setYear('ALL');setSection('ALL');setSearch('');setSortBy('block');setCollapsedBlocks([]);setSelectedCourseId(null)}}>Reset filters</button></div>
     <div className="selection-program-choices" role="group" aria-label="Filter program">
-     {[{value:'ALL',label:'All programs'},{value:'BEEd',label:'BEEd · Elementary Education'},{value:'BSE',label:'BSE · Entrepreneurship'}].map(p=><button type="button" key={p.value} className={program===p.value?'program-filter active':'program-filter'} onClick={()=>{setProgram(p.value);setYear('ALL');setSection('ALL');setExpandedOffering(null)}}>{p.label}<small>{offerings.filter(o=>o.academic_term_id===active?.id&&o.status==='available'&&courseById.get(o.curriculum_course_id)?.verification_status==='verified'&&(p.value==='ALL'||sectionById.get(o.class_section_id)?.program===p.value)).length} offerings</small></button>)}
+     {[{value:'ALL',label:'All programs'},{value:'BEEd',label:'BEEd · Elementary Education'},{value:'BSE',label:'BSE · Entrepreneurship'}].map(p=><button type="button" key={p.value} className={program===p.value?'program-filter active':'program-filter'} onClick={()=>{setProgram(p.value);setYear('ALL');setSection('ALL');setSelectedCourseId(null)}}>{p.label}<small>{offerings.filter(o=>o.academic_term_id===active?.id&&o.status==='available'&&courseById.get(o.curriculum_course_id)?.verification_status==='verified'&&(p.value==='ALL'||sectionById.get(o.class_section_id)?.program===p.value)).length} offerings</small></button>)}
     </div>
     <div className="selection-filters">
      <label>Year level<select value={year} onChange={e=>{setYear(e.target.value);setSection('ALL')}}><option value="ALL">All year levels</option>{[1,2,3,4].map(n=><option value={n} key={n}>Year {n}</option>)}</select></label>
@@ -135,25 +153,27 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
     </div>
     <div className="selection-browser-summary"><strong>{choices.length}</strong> matching course offerings across <strong>{choiceGroups.length}</strong> student blocks. <span>All programs remain available for cross-program teaching requests.</span></div>
     {choiceGroups.map(group=>{const isCollapsed=collapsedBlocks.includes(group.section.id);return <section className="course-block-group" key={group.section.id}>
-     <button type="button" className="course-block-heading" aria-expanded={!isCollapsed} onClick={()=>{setCollapsedBlocks(prev=>isCollapsed?prev.filter(id=>id!==group.section.id):[...prev,group.section.id]);setExpandedOffering(null)}}>
+     <button type="button" className="course-block-heading" aria-expanded={!isCollapsed} onClick={()=>{setCollapsedBlocks(prev=>isCollapsed?prev.filter(id=>id!==group.section.id):[...prev,group.section.id]);setSelectedCourseId(null)}}>
       <span><strong>{group.section.block_label}</strong><small>{group.section.program} · Year {group.section.year_level}{group.section.track?' · '+group.section.track:''}</small></span><span className="course-block-count">{group.items.length} subjects {isCollapsed?'＋':'−'}</span>
      </button>
-     {!isCollapsed&&<div className="course-block-list">{group.items.map(o=>{const c=courseById.get(o.curriculum_course_id)!,my=myLive(o.id),isAllocated=allocated(o.id),open=expandedOffering===o.id;return <article className="course-list-row" key={o.id}>
+     {!isCollapsed&&<div className="course-block-list">{group.items.map(o=>{const c=courseById.get(o.curriculum_course_id)!,my=myLive(o.id),isAllocated=allocated(o.id);return <article className="course-list-row" key={o.id}>
       <div className="course-list-row-main">
        <div className="course-list-code">{c.course_code}</div>
        <div className="course-list-description"><strong>{c.course_title}</strong><small>{c.units??'—'} units · {group.section.block_label}</small></div>
-       <div className="course-list-action">{my?<span className="selection-tag">{my.status} · Rank {my.preference_rank}</span>:isAllocated?<span className="selection-tag">Allocated</span>:<button type="button" className={open?'ghost':'primary'} disabled={busy} aria-expanded={open} onClick={()=>setExpandedOffering(open?null:o.id)}>{open?'Close':'Select course'}</button>}</div>
+       <div className="course-list-action">{my?<span className="selection-tag">{my.status} · Rank {my.preference_rank}</span>:isAllocated?<span className="selection-tag">Allocated</span>:<button type="button" className="primary" disabled={busy} onClick={()=>setSelectedCourseId(o.id)}>Select course</button>}</div>
       </div>
-      {open&&!my&&!isAllocated&&<form className="course-inline-request" onSubmit={e=>void requestCourse(e,o.id)}>
-       <label>Preference rank<select value={rank[o.id]||1} onChange={e=>setRank(prev=>({...prev,[o.id]:Number(e.target.value)}))}>{Array.from({length:10},(_,i)=><option value={i+1} key={i}>{i+1} — {i===0?'Highest priority':'Priority '+(i+1)}</option>)}</select></label>
-       <label>Teaching qualification / preference (optional)<input maxLength={1000} value={motivation[o.id]||''} onChange={e=>setMotivation(prev=>({...prev,[o.id]:e.target.value}))} placeholder="Expertise or teaching experience"/></label>
-       <button className="primary" type="submit" disabled={busy}>Submit preference</button>
-      </form>}
+
      </article>})}</div>}
     </section>})}
     {!choices.length&&<p className="selection-empty">No offerings match these filters. Change the year, block, or search keyword to see more subjects.</p>}
    </div>
-  </>:tab==='requests'?<div className="selection-rows">{myRequests.length?myRequests.map(r=><div className="selection-row" key={r.id}><div><strong>{offeringText(r.course_offering_id)}</strong><p>Rank {r.preference_rank} · {r.status} · {new Date(r.requested_at).toLocaleDateString()}</p>{r.decision_note&&<small>Admin decision: {r.decision_note}</small>}</div>{r.status==='pending'&&<button className="ghost" type="button" disabled={busy} onClick={()=>void withdraw(r.id)}>Withdraw</button>}</div>):<p>No requests submitted yet.</p>}</div>:<div className="selection-rows">{pending.length?pending.map(r=>{const f=facultyById.get(r.faculty_id);return <div key={r.id} className="selection-row admin-decision"><div><strong>{offeringText(r.course_offering_id)}</strong><p>{f?f.first_name+' '+f.last_name:'Instructor '+r.faculty_id.slice(0,8)} · Rank {r.preference_rank} · {f?.department||'—'} · {f?.employment_type||'—'}</p><small>Stated qualification: {r.motivation||'Not supplied. Review qualifications manually.'}</small><p>Current competing requests: {pending.filter(x=>x.course_offering_id===r.course_offering_id).length}</p></div><div className="decision-controls"><label>Decision reason<input value={decisionNote[r.id]||''} onChange={e=>setDecisionNote(prev=>({...prev,[r.id]:e.target.value}))} placeholder="Qualification and staffing rationale"/></label><div><button className="primary" type="button" disabled={busy} onClick={()=>void decide(r.id,true)}>Approve</button><button className="ghost" type="button" disabled={busy} onClick={()=>void decide(r.id,false)}>Decline</button></div></div></div>;}):<p>No pending requests to review.</p>}</div>}
+  </>:tab==='requests'?<div className="selection-rows">{myRequests.length?myRequests.map(r=><div className="selection-row" key={r.id}><div><strong>{offeringText(r.course_offering_id)}</strong><p>Rank {r.preference_rank} · {r.status} · {new Date(r.requested_at).toLocaleDateString()}</p><small>{timeLabel(r)}</small>{r.decision_note&&<small>Admin decision: {r.decision_note}</small>}</div>{r.status==='pending'&&<button className="ghost" type="button" disabled={busy} onClick={()=>void withdraw(r.id)}>Withdraw</button>}</div>):<p>No requests submitted yet.</p>}</div>:<div className="selection-rows">{pending.length?pending.map(r=>{const f=facultyById.get(r.faculty_id);return <div key={r.id} className="selection-row admin-decision"><div><strong>{offeringText(r.course_offering_id)}</strong><p>{f?f.first_name+' '+f.last_name:'Instructor '+r.faculty_id.slice(0,8)} · Rank {r.preference_rank} · {f?.department||'—'} · {f?.employment_type||'—'}</p><small>Stated qualification: {r.motivation||'Not supplied. Review qualifications manually.'}</small><p>Preferred: {timeLabel(r)}</p><p>Current competing requests: {pending.filter(x=>x.course_offering_id===r.course_offering_id).length}</p></div><div className="decision-controls"><label>Decision reason<input value={decisionNote[r.id]||''} onChange={e=>setDecisionNote(prev=>({...prev,[r.id]:e.target.value}))} placeholder="Qualification and staffing rationale"/></label><div><button className="primary" type="button" disabled={busy} onClick={()=>void decide(r.id,true)}>Approve</button><button className="ghost" type="button" disabled={busy} onClick={()=>void decide(r.id,false)}>Decline</button></div></div></div>;}):<p>No pending requests to review.</p>}</div>}
+  {chosenOffering&&chosenCourse&&chosenSection&&<CourseScheduleWizard
+    key={chosenOffering.id} code={chosenCourse.course_code} title={chosenCourse.course_title} block={chosenSection.block_label}
+    units={chosenCourse.units} rank={rank[chosenOffering.id]||1} motivation={motivation[chosenOffering.id]||''}
+    busy={busy} onClose={()=>setSelectedCourseId(null)}
+    onSubmit={(choice,priority,note)=>requestCourseWithSchedule(chosenOffering.id,choice,priority,note)}
+   />}
   {notices.length>0&&<div className="selection-notifications"><h3>Your recent notifications</h3>{notices.map(n=><p key={n.id}><strong>{n.title}</strong> — {n.body}</p>)}</div>}
   {message&&<div className="notice" role="status">{message}</div>}
  </section>
