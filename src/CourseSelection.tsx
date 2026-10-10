@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from './supabase';
 import { CourseScheduleWizard, type ScheduleChoice } from './CourseScheduleWizard';
 
@@ -27,8 +27,8 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
  const [venues,setVenues]=useState<Venue[]>([]);
  const [collapsedBlocks,setCollapsedBlocks]=useState<string[]>([]);
  const [search,setSearch]=useState('');
- const [rank,setRank]=useState<Record<number,number>>({});
- const [motivation,setMotivation]=useState<Record<number,string>>({});
+ const [rank]=useState<Record<number,number>>({});
+ const [motivation]=useState<Record<number,string>>({});
  const [decisionNote,setDecisionNote]=useState<Record<number,string>>({});
  const [tab,setTab]=useState<'browse'|'requests'|'admin'>('browse');
  const [loading,setLoading]=useState(true);
