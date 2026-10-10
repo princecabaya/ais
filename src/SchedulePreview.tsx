@@ -15,7 +15,7 @@ const GRID=[450,540,630,780,870,960,1050,1140];
 const time=(n:number)=>{const h=Math.floor(n/60);return ((h+11)%12+1)+':'+String(n%60).padStart(2,'0')+(h>=12?' PM':' AM')};
 const overlap=(a:Session,b:Session)=>a.weekday===b.weekday&&a.start<b.end&&b.start<a.end;
 export function SchedulePreview({facultyId,isAdmin}:{facultyId:string;isAdmin:boolean}){
- const [open,setOpen]=useState(isAdmin);
+ const [open,setOpen]=useState(true);
  const [viewId,setViewId]=useState(facultyId);
  const [terms,setTerms]=useState<Term[]>([]);
  const [faculty,setFaculty]=useState<Faculty[]>([]);
