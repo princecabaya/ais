@@ -143,6 +143,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  const [faculty,setFaculty]=useState<Faculty[]>([]),[terms,setTerms]=useState<Term[]>([]),[courses,setCourses]=useState<Course[]>([]),[offerings,setOfferings]=useState<Offering[]>([]),[sections,setSections]=useState<Section[]>([]),[venues,setVenues]=useState<Venue[]>([]),[meetings,setMeetings]=useState<Meeting[]>([]),[requests,setRequests]=useState<Request[]>([]),[classifications,setClassifications]=useState<WorkCourse[]>([]),[detailRows,setDetailRows]=useState<WorkDetails[]>([]),[publications,setPublications]=useState<Publication[]>([]);
  const [selectedFaculty,setSelectedFaculty]=useState(facultyId);
  const [template,setTemplate]=useState<File|null>(null);
+ const [masterReady,setMasterReady]=useState(false);
+ const [templateBusy,setTemplateBusy]=useState(false);
  const [courseDraft,setCourseDraft]=useState<Record<string,string>>({});
  const [detailDraft,setDetailDraft]=useState<Record<string,string>>({});
  const [reason,setReason]=useState('');
