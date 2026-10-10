@@ -36,6 +36,7 @@ const normal = (value: string) => value.toUpperCase().trim().replace(/\s+/g, ' '
 
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
+  const [workspaceTab, setWorkspaceTab] = useState('courses');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [step, setStep] = useState<'email' | 'link-sent' | 'password' | 'profile'>('email');
   const [email, setEmail] = useState('');
@@ -288,22 +289,46 @@ export function App() {
               </div>
               <span className="status"><CheckCircle2 size={16} /> {profile.status}</span>
             </div>
-            <div className="cards">
-              <article><BookOpen /><strong>Course preferences</strong><p>Select courses across BEEd and BSE, rank preferences, and submit for administrative approval.</p><span>Available below</span></article>
-              <article><CalendarDays /><strong>Faculty availability</strong><p>Set preferred and unavailable teaching periods and review authorized exceptions.</p><span>Available below</span></article>
-              <article><ClipboardList /><strong>Official workload</strong><p>Export editable PSU-ACA-031 Word documents from approved course schedules.</p><span>Available below</span></article>
-            </div>
-            {profile.role === 'admin' && <AcademicTermSettings />}
-            <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
-            <SchedulePreview facultyId={profile.id} isAdmin={profile.role === 'admin'} />
-            <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
-            <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />
-            <OfficialWorkload facultyId={profile.id} isAdmin={profile.role === 'admin'} />
-            {profile.role === 'admin' && (
-              <>
-              <AdministratorApproval />
-              <CurriculumManagement />
-              <div className="panel admin">
+            <nav className="workspace-nav" aria-label="Faculty scheduling workspace">
+              <div className="workspace-nav-title">
+                <strong>{profile.role === 'admin' ? 'Scheduling and Administration' : 'My Teaching Workspace'}</strong>
+                <small>Choose a step. You do not need to scroll through every module.</small>
+              </div>
+              <div className="workspace-nav-tabs">
+                {[
+                  {id:'courses',label:'1. Select Courses',icon:BookOpen},
+                  {id:'preview',label:'2. Schedule Preview',icon:CalendarDays},
+                  {id:'availability',label:'3. Availability',icon:CalendarDays},
+                  {id:'scheduling',label:'4. Schedule & Rooms',icon:CalendarDays},
+                  {id:'workload',label:'5. Faculty Workload',icon:ClipboardList},
+                  ...(profile.role==='admin' ? [
+                    {id:'approval',label:'Admin: Approvals',icon:ShieldCheck},
+                    {id:'semester',label:'Admin: Semester',icon:CalendarDays},
+                    {id:'curriculum',label:'Admin: Curricula',icon:BookOpen},
+                    {id:'faculty',label:'Admin: Faculty Accounts',icon:Users}
+                  ] : [])
+                ].map(({id,label,icon:Icon}) => (
+                  <button key={id} type="button"
+                    aria-current={workspaceTab===id ? 'step' : undefined}
+                    className={workspaceTab===id ? 'workspace-tab active' : 'workspace-tab'}
+                    onClick={()=>setWorkspaceTab(id)}>
+                    <Icon size={16}/>{label}
+                  </button>
+                ))}
+              </div>
+            </nav>
+            <div className="workspace-content" key={workspaceTab}>
+              {workspaceTab === 'courses' && <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {workspaceTab === 'preview' && <SchedulePreview facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {workspaceTab === 'availability' && <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {workspaceTab === 'scheduling' && <RoomScheduling facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {workspaceTab === 'workload' && <OfficialWorkload facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
+              {profile.role === 'admin' && workspaceTab === 'approval' && <AdministratorApproval />}
+              {profile.role === 'admin' && workspaceTab === 'semester' && <AcademicTermSettings />}
+              {profile.role === 'admin' && workspaceTab === 'curriculum' && <CurriculumManagement />}
+              {profile.role === 'admin' && workspaceTab === 'faculty' && (
+                <div className="panel admin">
+
                 <div className="iconhead"><ShieldCheck /><span>Administrator · Faculty authorization</span></div>
                 <p>Only the listed PSU email accounts may begin confirmation-link registration.</p>
                 <form className="inviteform" onSubmit={addInvite}>
@@ -321,9 +346,24 @@ export function App() {
                     </div>
                   )) : <p>No invitations yet. Add your first faculty email.</p>}
                 </div>
-              </div>
-              </>
-            )}
+                </div>
+              )}
+            </div>
+            <div className="workspace-next">
+              {workspaceTab !== 'courses' && (
+                <button type="button" className="ghost" onClick={()=>{
+                  const order=['courses','preview','availability','scheduling','workload'];
+                  const i=order.indexOf(workspaceTab);setWorkspaceTab(i>0?order[i-1]:'courses');
+                }}>← Previous step</button>
+              )}
+              {['courses','preview','availability','scheduling'].includes(workspaceTab) && (
+                <button type="button" className="primary" onClick={()=>{
+                  const order=['courses','preview','availability','scheduling','workload'];
+                  setWorkspaceTab(order[order.indexOf(workspaceTab)+1]);
+                }}>Continue to {({courses:'Schedule Preview',preview:'Faculty Availability',availability:'Schedule & Rooms',scheduling:'Faculty Workload'} as Record<string,string>)[workspaceTab]} →</button>
+              )}
+              {workspaceTab === 'workload' && <span className="workspace-done">End of faculty workflow · You can return to any previous step using the tabs above.</span>}
+            </div>
           </section>
         )}
 
