@@ -32,7 +32,8 @@ export function calculateFacultyWorkload(entries:WorkloadInput[],fullTime:boolea
   const preparationHours=regular&&valid&&!samePreparation?units!:0;
   if(regular&&!samePreparation)counted.add(preparationKey);
   const bonusHours=regular&&position>=5&&position<=6&&valid&&!samePreparation?2:0;
-  const creditedHours=valid?Number((teachingHours+preparationHours+bonusHours).toFixed(2)):null;
+  const creditedHours=(!fullTime||category==='extra')?Number(teachingHours.toFixed(2)):
+   valid?Number((teachingHours+preparationHours+bonusHours).toFixed(2)):null;
   return {...entry,position,category,preparationKey,
    sharedPreparation:samePreparation,preparationHours,bonusHours,creditedHours,teachingHours,
    note:!valid?'Verify course units before computing WHE':
