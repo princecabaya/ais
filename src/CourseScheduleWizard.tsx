@@ -15,7 +15,7 @@ const meetingDays=(p:string,day:number)=>p==='MW'?[1,3]:p==='TTH'?[2,4]:p==='NST
 export function CourseScheduleWizard({code,title,block,units,rank:initialRank,motivation:initialMotivation,busy,submissionError,onClose,onSubmit}:Props){
  const kind=useMemo(()=>{if(/field study|internship|practicum/i.test(title))return 'FIELD';const normalized=code.toUpperCase().replace(/\s+/g,'');return normalized.startsWith('NSTP')?'NSTP':normalized.startsWith('PATHFIT')?'PATHFIT':units===3?'STANDARD':'SPECIAL'},[code,units,title]);
  const [step,setStep]=useState(1);
- const [pattern,setPattern]=useState<'MW'|'TTH'|'PATHFIT'|'NSTP'|'FIELD'>(kind='FIELD'?'FIELD':kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':'MW');
+ const [pattern,setPattern]=useState<'MW'|'TTH'|'PATHFIT'|'NSTP'|'FIELD'>(kind==='FIELD'?'FIELD':kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':'MW');
  const [weekday,setWeekday]=useState(1);
  const [start,setStart]=useState(450);
  const [venueId,setVenueId]=useState(0);
