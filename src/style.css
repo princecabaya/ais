@@ -482,3 +482,37 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .curriculum-correction h3{margin:0}
 .curriculum-actions{display:flex;gap:1rem;flex-wrap:wrap}
 @media(max-width:700px){.curriculum-heading,.curriculum-review-row{flex-direction:column;align-items:stretch}.curriculum-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.curriculum-filters{grid-template-columns:1fr}}
+
+
+/* Phase 2B: course preference requests */
+.course-selection{background:linear-gradient(180deg,#fff,#fffaf4)}
+.selection-top{display:flex;align-items:start;justify-content:space-between;gap:1rem}
+.selection-top h2{margin:.6rem 0 .2rem}
+.selection-top p{color:#617994;max-width:850px}
+.selection-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.8rem}
+.selection-metrics>div{padding:1rem;border-radius:1rem;background:#ebf3fb;border:1px solid #d7e6f4;display:grid}
+.selection-metrics strong{font-size:1.75rem;line-height:1.2;color:#1b5f99}
+.selection-metrics span{font-size:.84rem;color:#5a738c}
+.selection-filters{display:grid;grid-template-columns:1fr 1.4fr 1.3fr;gap:1rem;margin:1rem 0}
+.offering-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:.85rem}
+.offering-card{border:1px solid #dae6ef;border-radius:1.1rem;background:#fff;padding:1rem;display:grid;gap:.65rem}
+.offering-heading{display:flex;justify-content:space-between;align-items:center;gap:.5rem;color:#165b93}
+.offering-heading span{background:#ffeddc;border-radius:999px;padding:.25rem .65rem;color:#bb601c;font-size:.78rem;font-weight:700}
+.offering-card h3{margin:0;font-size:1rem;color:#163d64}
+.offering-card p{margin:0;color:#657d95;font-size:.85rem}
+.offering-card form{display:grid;gap:.8rem}
+.offering-card input,.offering-card select{padding:.65rem}
+.selection-tag{background:#eaf5fb;border-radius:.75rem;padding:.7rem;color:#165b93;font-weight:700;font-size:.88rem}
+.selection-rows{display:grid;gap:.75rem}
+.selection-row{padding:1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;border:1px solid #dce8f0;background:#fff;border-radius:1rem}
+.selection-row strong{color:#17436b}
+.selection-row p{font-size:.85rem;color:#607d96;margin:.3rem 0}
+.selection-row small{color:#995a2c}
+.admin-decision{align-items:start}
+.decision-controls{display:grid;gap:.65rem;min-width:270px;max-width:380px;width:100%}
+.decision-controls>div{display:flex;gap:.5rem;flex-wrap:wrap}
+.decision-controls .primary,.decision-controls .ghost{padding:.6rem 1rem}
+.selection-notifications{margin-top:1rem;background:#fff2e5;border:1px solid #f1d8c0;border-radius:1rem;padding:1rem}
+.selection-notifications h3{margin:0 0 .65rem}
+.selection-notifications p{font-size:.85rem;color:#395b78}
+@media(max-width:730px){.selection-filters{grid-template-columns:1fr}.selection-top,.selection-row{flex-direction:column;align-items:stretch}.decision-controls{min-width:0;max-width:none}}
