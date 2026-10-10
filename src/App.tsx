@@ -3,6 +3,7 @@ import { BookOpen, CalendarDays, CheckCircle2, ClipboardList, LogOut, Mail, Shie
 import { configured, domainOk, supabase } from './supabase';
 import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
+import { CourseSelection } from './CourseSelection';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -282,10 +283,11 @@ export function App() {
               <span className="status"><CheckCircle2 size={16} /> {profile.status}</span>
             </div>
             <div className="cards">
-              <article><BookOpen /><strong>Course preferences</strong><p>Available when course offerings and curricula are activated in Phase 2.</p><span>Coming in Phase 2</span></article>
+              <article><BookOpen /><strong>Course preferences</strong><p>Select courses across BEEd and BSE, rank preferences, and submit for administrative approval.</p><span>Available below</span></article>
               <article><CalendarDays /><strong>Faculty availability</strong><p>Preferred and unavailable teaching periods, including administrator exceptions.</p><span>Coming in Phase 2</span></article>
               <article><ClipboardList /><strong>Official workload</strong><p>Administrator-approved teaching assignments and editable FWL Word exports.</p><span>Coming in later phase</span></article>
             </div>
+            <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             {profile.role === 'admin' && (
               <>
               <CurriculumManagement />
