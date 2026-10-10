@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import JSZip from 'jszip';
 import { supabase } from './supabase';
-import { WorkloadMaster } from './WorkloadMaster';
 
 type Faculty={id:string;first_name:string;last_name:string;middle_initial:string|null;department:string;employment_type:string};
 type Term={id:number;academic_year:string;semester:number;is_active:boolean};
@@ -144,6 +143,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  const [faculty,setFaculty]=useState<Faculty[]>([]),[terms,setTerms]=useState<Term[]>([]),[courses,setCourses]=useState<Course[]>([]),[offerings,setOfferings]=useState<Offering[]>([]),[sections,setSections]=useState<Section[]>([]),[venues,setVenues]=useState<Venue[]>([]),[meetings,setMeetings]=useState<Meeting[]>([]),[requests,setRequests]=useState<Request[]>([]),[classifications,setClassifications]=useState<WorkCourse[]>([]),[detailRows,setDetailRows]=useState<WorkDetails[]>([]),[publications,setPublications]=useState<Publication[]>([]);
  const [selectedFaculty,setSelectedFaculty]=useState(facultyId);
  const [template,setTemplate]=useState<File|null>(null);
+ const [masterError,setMasterError]=useState('');
  const [courseDraft,setCourseDraft]=useState<Record<string,string>>({});
  const [detailDraft,setDetailDraft]=useState<Record<string,string>>({});
  const [reason,setReason]=useState('');
@@ -176,6 +176,19 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   setLoading(false);
  },[]);
  useEffect(()=>{void load()},[load]);
+ useEffect(()=>{
+  let mounted=true;
+  const fetchMaster=async()=>{
+   if(!supabase)return;
+   const {data,error}=await supabase.storage.from('faculty-workload-templates').download('PSU-ACA-031-master.docx');
+   if(!mounted)return;
+   if(error){setMasterError('The official university master template is unavailable. Ask the campus administrator to restore it.');return;}
+   setTemplate(new File([data],'PSU-ACA-031-master.docx',{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+   setMasterError('');
+  };
+  void fetchMaster();
+  return()=>{mounted=false};
+ },[]);
  const fac=faculty.find(f=>f.id===selectedFaculty);
  const rows=useMemo(()=>{
   const cMap=new Map(courses.map(c=>[c.id,c])),oMap=new Map(offerings.map(o=>[o.id,o])),sMap=new Map(sections.map(s=>[s.id,s])),vMap=new Map(venues.map(v=>[v.id,v]));
@@ -223,15 +236,13 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
   setBusy(false);
  }
  async function download(){
-  if(!fac||!term||!template){setMessage('Select the official PSU-ACA-031 .docx template first.');return;}
-  const unclassified=rows.filter(r=>!r.w);
-  if(unclassified.length){setMessage('Classify each approved course before exporting. Missing: '+unclassified.map(r=>r.code+' '+r.section).join(', '));return;}
+  if(!fac||!term||!template){setMessage('The saved PSU-ACA-031 master template is unavailable. Contact an administrator.');return;}
   setBusy(true);setMessage('');
   try{
    const entries:ExportCourse[]=rows.map(r=>({
     code:r.code,title:r.title,section:r.section,units:r.w?.units_override||String(r.units??''),room:r.room,time:r.time,days:r.days,
     whe:r.w?.whe??null,lec:r.w?.lec_hours??null,lab:r.w?.lab_hours??null,rle:r.w?.rle_hours??null,
-    male:r.w?.male_students??null,female:r.w?.female_students??null,category:r.w!.load_category
+    male:r.w?.male_students??null,female:r.w?.female_students??null,category:r.w?.load_category||'regular'
    }));
    await exportUsingTemplate(template,fac,term,entries,details,published);
    setMessage('Editable Word document generated. Review missing fields, equivalencies, and signatures before approving.');
@@ -256,11 +267,15 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     <div className="availability-dialog-actions"><button className="primary" disabled={busy||reason.trim().length<10} onClick={()=>void saveCourse()}>Save workload entry</button><button className="ghost" onClick={()=>setCourseDraft({})}>Cancel</button></div>
    </div>}
    {isAdmin&&<div className="workload-edit"><h3>Faculty academic profile and supplementary workload</h3><div className="workload-fields">{FIELDS.map(k=><label key={k}>{LABELS[k]}{HOURS.has(k)?<input type="number" min="0" step=".5" value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>:<input value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>}</label>)}</div><button className="primary" disabled={busy} onClick={()=>void saveDetails()}>Save workload profile</button></div>}
-   <div className="workload-download"><h3>Export to Microsoft Word (.docx)</h3>
-    <WorkloadMaster isAdmin={isAdmin} onReady={setTemplate}/><p>The secure campus master uses the blank <strong>PSU-ACA-031</strong> Word format and retains its official university tables and printed approval roles. No previous instructor's classes or signature should be present.</p>
-    <label>Official PSU-ACA-031 template (.docx)<input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e:ChangeEvent<HTMLInputElement>)=>setTemplate(e.target.files?.[0]||null)}/></label>
-    <button className="primary" disabled={busy||!template||!fac||rows.length===0} onClick={()=>void download()}>Export editable PSU Workload</button>
-    <p className="curriculum-note">Unverified student counts, WHE, research, extension and other workload values remain blank. Review every exported entry before collecting approvals.</p>
+   <div className="workload-download">
+    <h3>Generate Faculty Workload</h3>
+    <p>AIS automatically fills the stored PSU-ACA-031 Word template with this instructor's approved classes, rooms and meeting times.</p>
+    <p className="curriculum-note"><strong>University template:</strong> {template?'Ready for automatic generation':'Loading or unavailable'}.</p>
+    {masterError&&<div className="notice" role="alert">{masterError}</div>}
+    {!published&&<p className="curriculum-note">The semester timetable is not yet published. The generated Word document will be marked as a draft.</p>}
+    {rows.some(r=>!r.w)&&<p className="curriculum-note">Some course workload equivalencies have not been verified. These will remain blank, and unclassified courses will appear under regular load as a provisional grouping until reviewed.</p>}
+    <button className="primary" type="button" disabled={busy||!template||!fac||rows.length===0} onClick={()=>void download()}>{busy?'Generating…':'Generate Faculty Workload (.docx)'}</button>
+    <p className="curriculum-note">The file is editable. Official workload equivalents, missing counts, signatories and approvals still require review.</p>
    </div>
   </>}
   {message&&<div className="notice" role="status">{message}</div>}
