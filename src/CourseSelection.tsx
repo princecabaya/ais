@@ -171,7 +171,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
   {chosenOffering&&chosenCourse&&chosenSection&&<CourseScheduleWizard
     key={chosenOffering.id} code={chosenCourse.course_code} title={chosenCourse.course_title} block={chosenSection.block_label}
     units={chosenCourse.units} rank={rank[chosenOffering.id]||1} motivation={motivation[chosenOffering.id]||''}
-    busy={busy} onClose={()=>setSelectedCourseId(null)}
+    busy={busy} submissionError={message} onClose={()=>{setSelectedCourseId(null);setMessage('')}}
     onSubmit={(choice,priority,note)=>requestCourseWithSchedule(chosenOffering.id,choice,priority,note)}
    />}
   {notices.length>0&&<div className="selection-notifications"><h3>Your recent notifications</h3>{notices.map(n=><p key={n.id}><strong>{n.title}</strong> — {n.body}</p>)}</div>}
