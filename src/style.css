@@ -567,3 +567,22 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .schedule-venue-management{margin-top:1.4rem;border-top:1px solid #dce7f0;padding-top:1rem}
 .schedule-venue-form{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end;gap:1rem}
 @media(max-width:800px){.schedule-form-grid,.schedule-venue-form,.schedule-filter-row{grid-template-columns:1fr}.published-session{grid-template-columns:1fr;gap:.4rem}}
+
+
+/* Phase 2E — Administrator approval and publication */
+.admin-approval{background:linear-gradient(180deg,#fff,#fff9f1)}
+.admin-approval-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem}
+.admin-approval-columns>div{min-width:0;border:1px solid #dce8f2;background:#fff;border-radius:1.1rem;padding:1rem}
+.admin-review-item{padding:.8rem;border:1px solid #e3eaf2;border-radius:.75rem;margin:.5rem 0;background:#fff}
+.admin-review-item strong{color:#16588b}
+.admin-review-item p{margin:.3rem 0;color:#4e6d87;font-size:.9rem}
+.admin-review-item small{color:#73899a}
+.admin-conflict{border:1px solid #eeb797;border-left:4px solid #d66c28;border-radius:.7rem;padding:1rem;margin:.5rem 0;background:#ffefe3}
+.admin-conflict strong{color:#963f19}
+.admin-conflict p{margin:.25rem 0;color:#714d40}
+.admin-revision-form{margin:1rem 0;padding:1.2rem;background:#fff5e9;border:1px solid #f1d6c0;border-radius:1rem;display:grid;gap:1rem}
+.admin-revision-form h3{margin:0}
+.admin-revision-form textarea,.admin-approval textarea{display:block;width:100%;font:inherit;padding:.8rem;border:1px solid #d4e0eb;border-radius:.8rem;background:#fff;resize:vertical}
+.publication-readiness{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;margin:1rem 0}
+.publication-readiness p{background:#eef5fc;border-radius:.7rem;padding:.8rem;margin:0;color:#254e75}
+@media(max-width:760px){.admin-approval-columns,.publication-readiness{grid-template-columns:1fr}}
