@@ -12,6 +12,7 @@ import { RoomScheduling } from './RoomScheduling';
 import { AdministratorApproval } from './AdministratorApproval';
 import { OfficialWorkload } from './OfficialWorkload';
 import { AcademicTermSettings } from './AcademicTermSettings';
+import { FacultyHelpChat } from './FacultyHelpChat';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -216,7 +217,6 @@ export function App() {
           </div>
         </div>
         <div className="topright">
-          {session && profile && <span className="pill">AY 2026–2027</span>}
           {session && (
             <button className="ghost" onClick={logout}>
               <LogOut size={16} /> Sign out
@@ -385,6 +385,7 @@ export function App() {
         </section>
       </main>
 
+      {session && profile?.status==='active' && <FacultyHelpChat facultyId={profile.id} isAdmin={profile.role==='admin'}/>}
       <footer>Palawan State University · Balabac Campus <span>Phase 1 · Faculty Authentication</span></footer>
     </div>
   );
