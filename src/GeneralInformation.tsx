@@ -21,7 +21,7 @@ const clock=(n:number)=>{
  const h=Math.floor(n/60),min=String(n%60).padStart(2,'0');
  return `${((h+11)%12)+1}:${min} ${h<12?'AM':'PM'}`;
 };
-const PERIODS=[450,540,630,780,870,960,1050,1140];
+const PERIODS=[[450,540],[540,630],[630,720],[780,870],[870,960],[960,1050],[1050,1140]] as const;
 export function GeneralInformation(){
  const [snapshot,setSnapshot]=useState<Snapshot>({term_id:null,assignments:[],bookings:[]});
  const [offerings,setOfferings]=useState<Offering[]>([]);
@@ -119,8 +119,8 @@ export function GeneralInformation(){
     <label>Room or venue<select value={room} onChange={e=>setRoom(e.target.value)}><option value="ALL">All rooms and venues</option>{venues.map(v=><option value={v.id} key={v.id}>{v.name}</option>)}</select></label>
    </div>
    <p className="curriculum-note">{booked.length} approved meetings displayed · {busyRoomCount} room{busyRoomCount===1?'':'s'} booked on {DAYS[day-1]}. Confirmed meeting times cannot be double-booked.</p>
-   <div className="general-room-scroll"><table className="general-room-table"><thead><tr><th>Period</th>{(room==='ALL'?venues:venues.filter(v=>v.id===Number(room))).map(v=><th key={v.id}>{v.name}</th>)}</tr></thead><tbody>{PERIODS.slice(0,-1).map((start,i)=><tr key={start}><th>{clock(start)}–{clock(PERIODS[i+1])}</th>{(room==='ALL'?venues:venues.filter(v=>v.id===Number(room))).map(v=>{
-    const hits=booked.filter(b=>b.venue_id===v.id&&b.start_minute<PERIODS[i+1]&&b.end_minute>start);
+   <div className="general-room-scroll"><table className="general-room-table"><thead><tr><th>Period</th>{(room==='ALL'?venues:venues.filter(v=>v.id===Number(room))).map(v=><th key={v.id}>{v.name}</th>)}</tr></thead><tbody>{PERIODS.map(([start,end])=><tr key={start}><th>{clock(start)}–{clock(end)}</th>{(room==='ALL'?venues:venues.filter(v=>v.id===Number(room))).map(v=>{
+    const hits=booked.filter(b=>b.venue_id===v.id&&b.start_minute<end&&b.end_minute>start);
     return <td key={v.id}>{hits.length?hits.map(h=><div className="general-room-booked" key={h.meeting_id}>
      <strong>{h.course_code} · {h.block}</strong><small>{clock(h.start_minute)}–{clock(h.end_minute)}</small>
      <small>{h.faculty_name}</small><em>{h.publication_status==='published'?'Published timetable':'Approved · not published'}</em>
