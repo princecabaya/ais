@@ -552,3 +552,18 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .availability-action{border:1px solid #cad9e5;border-radius:999px;padding:.7rem 1.1rem;font-weight:700}
 .availability-dialog textarea{border:1px solid #ccdce9;border-radius:.8rem;padding:.8rem;resize:vertical;width:100%;font:inherit}
 @media(max-width:720px){.availability-top{flex-direction:column}.availability-intro{grid-template-columns:1fr 1fr}.availability-matrix{min-width:850px}}
+
+
+/* Phase 2D: rooms and schedule assignment */
+.room-scheduler{background:linear-gradient(180deg,#fff,#fff8f0)}
+.schedule-proposal-form{padding:1rem;border:1px solid #d8e6f1;background:#fff;border-radius:1.2rem;margin:1rem 0;display:grid;gap:1rem}
+.schedule-form-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.schedule-advice{border-left:4px solid #e9892e;background:#fff0df;padding:.85rem;border-radius:.65rem;color:#20486d}
+.schedule-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.schedule-session-list{display:grid;gap:.6rem}
+.published-session{display:grid;grid-template-columns:160px minmax(0,2fr) minmax(0,1fr);align-items:center;gap:1rem;background:#fff;border:1px solid #dce8f3;padding:.85rem;border-radius:.85rem}
+.published-session strong{color:#c96d22}
+.published-session span{font-size:.87rem;color:#325879}
+.schedule-venue-management{margin-top:1.4rem;border-top:1px solid #dce7f0;padding-top:1rem}
+.schedule-venue-form{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto;align-items:end;gap:1rem}
+@media(max-width:800px){.schedule-form-grid,.schedule-venue-form,.schedule-filter-row{grid-template-columns:1fr}.published-session{grid-template-columns:1fr;gap:.4rem}}
