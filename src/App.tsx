@@ -46,6 +46,7 @@ export function App() {
   }
   const [profile, setProfile] = useState<Profile | null>(null);
   const [step, setStep] = useState<'email' | 'link-sent' | 'password' | 'profile'>('email');
+  const [authMode, setAuthMode] = useState<'login' | 'activate'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -103,6 +104,32 @@ export function App() {
   useEffect(() => {
     if (profile?.role === 'admin') void loadInvites();
   }, [profile?.role]);
+
+  async function signInWithPassword(e: FormEvent) {
+    e.preventDefault();
+    setMessage('');
+    if (!domainOk(email)) {
+      setMessage('Enter your PSU corporate email address (@psu.palawan.edu.ph).');
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase!.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+      if (error) throw error;
+      setPassword('');
+      setMessage('');
+    } catch (err) {
+      const text = (err as Error).message;
+      setMessage(text.toLowerCase().includes('invalid login credentials')
+        ? 'Incorrect PSU email or password. Check your details, or use account activation if you have not registered.'
+        : text);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function sendConfirmationLink(e: FormEvent) {
     e.preventDefault();
@@ -201,6 +228,8 @@ export function App() {
     await supabase?.auth.signOut();
     setProfile(null);
     setStep('email');
+    setAuthMode('login');
+    setPassword('');
     setMessage('Signed out.');
   }
 
@@ -242,17 +271,55 @@ export function App() {
         ) : !session ? (
           <div className="panel auth">
             <div className="iconhead"><Mail /><span>Faculty access</span></div>
-            {step === 'email' ? (
+            <div className="auth-mode-switch" role="group" aria-label="Choose faculty authentication">
+              <button type="button" className={authMode === 'login' ? 'auth-mode-selected' : ''}
+                onClick={() => {setAuthMode('login');setStep('email');setMessage('');setPassword('');}}>
+                Log In
+              </button>
+              <button type="button" className={authMode === 'activate' ? 'auth-mode-selected' : ''}
+                onClick={() => {setAuthMode('activate');setStep('email');setMessage('');setPassword('');}}>
+                Activate Account
+              </button>
+            </div>
+            {authMode === 'login' ? (
+              <form onSubmit={signInWithPassword}>
+                <h2>Log in to your faculty account</h2>
+                <p>For registered PSU faculty members and administrators.</p>
+                <label>PSU corporate email
+                  <input type="email" autoComplete="username" required value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="faculty@psu.palawan.edu.ph" />
+                </label>
+                <label>Password
+                  <input type="password" autoComplete="current-password" required
+                    value={password} onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password" />
+                </label>
+                <button type="submit" className="primary" disabled={busy}>
+                  {busy ? 'Logging in…' : 'Log In'}
+                </button>
+                <button type="button" className="link auth-activation-link"
+                  onClick={() => {setAuthMode('activate');setStep('email');setPassword('');setMessage('');}}>
+                  First time here? Activate your account
+                </button>
+              </form>
+            ) : step === 'email' ? (
               <form onSubmit={sendConfirmationLink}>
-                <h2>Verify your university email</h2>
-                <p>Your address must be pre-authorized by the scheduling administrator.</p>
-                <label>PSU corporate email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="faculty@psu.palawan.edu.ph" /></label>
-                <button disabled={busy} className="primary">{busy ? 'Sending…' : 'Send confirmation link'}</button>
+                <h2>Activate your faculty account</h2>
+                <p>Your university email must first be authorized by the scheduling administrator.</p>
+                <label>PSU corporate email
+                  <input type="email" autoComplete="email" required value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="faculty@psu.palawan.edu.ph" />
+                </label>
+                <button type="submit" disabled={busy} className="primary">
+                  {busy ? 'Sending…' : 'Send confirmation link'}
+                </button>
               </form>
             ) : (
               <div className="link-confirmation">
                 <h2>Check your PSU email inbox</h2>
-                <p>Open the newest message for <strong>{email}</strong> and click its confirmation or sign-in link. You will return to this website to set a password and complete your profile.</p>
+                <p>Open the newest message for <strong>{email}</strong> and click its confirmation link. You will return to this website to create your password and complete your profile.</p>
                 <button type="button" className="link" onClick={() => setStep('email')}>Use another email or resend link</button>
               </div>
             )}
