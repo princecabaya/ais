@@ -839,3 +839,19 @@ footer span { color: var(--orange-700); font-weight: 700; }
  .app:not(.app--signed-in) > main{display:grid;grid-template-columns:minmax(0,1fr)}
  .app:not(.app--signed-in) > main > .auth{max-width:600px;width:100%;margin-inline:auto}
 }
+
+
+/* Administrator-only curriculum editing */
+.catalog-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:1rem;margin:.8rem 0}
+.catalog-toolbar span{color:#667f95;font-size:.85rem}
+.catalog-edit-overlay{position:fixed;inset:0;z-index:1100;background:rgba(12,34,57,.65);display:flex;align-items:center;justify-content:center;padding:1rem}
+.catalog-edit-dialog{display:grid;gap:1rem;width:min(100%,700px);max-height:92vh;overflow-y:auto;background:white;border:1px solid #dbe7f1;border-radius:1.2rem;padding:1.4rem;box-shadow:0 26px 70px #12385f50}
+.catalog-edit-heading{display:flex;align-items:start;justify-content:space-between;gap:1rem}
+.catalog-edit-heading h3{margin:.3rem 0;color:#174b76;font-size:1.25rem}
+.catalog-edit-heading p{margin:0;color:#638099;font-size:.9rem}
+.catalog-edit-fields{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+.catalog-edit-fields .catalog-wide{grid-column:1/-1}
+.catalog-edit-fields textarea{width:100%;padding:.8rem;border:1px solid #d3e1ec;border-radius:.8rem;font:inherit;resize:vertical}
+.catalog-edit-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.8rem}
+.curriculum-table td .ghost{padding:.45rem .85rem;font-size:.82rem}
+@media(max-width:600px){.catalog-edit-fields{grid-template-columns:1fr}.catalog-edit-dialog{padding:1rem}.catalog-edit-heading{flex-wrap:wrap}}
