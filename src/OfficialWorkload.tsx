@@ -13,7 +13,15 @@ type Request={faculty_id:string;course_offering_id:number;academic_term_id:numbe
 type WorkCourse={course_offering_id:number;faculty_id:string;academic_term_id:number;load_category:'regular'|'extra';units_override:string|null;whe:number|null;lec_hours:number|null;lab_hours:number|null;rle_hours:number|null;male_students:number|null;female_students:number|null};
 type WorkDetails={faculty_id:string;academic_term_id:number;[key:string]:string|number|null};
 type Publication={academic_term_id:number;published_at:string;revision:number};
-const FIELDS=['years_at_psu','academic_rank','govt_service_years','bachelors_degree','masters_degree','doctoral_degree','designation','consultation_schedule','research_details','extension_details','production_details','cocurricular_details','administrative_details','research_hours','extension_hours','production_hours','cocurricular_hours','administrative_hours'] as const;
+const FIELDS=['years_at_psu','academic_rank','govt_service_years','bachelors_degree','masters_degree','doctoral_degree','designation','consultation_schedule','research_details','research_time','research_day','extension_details','extension_time','extension_day','production_details','production_time','production_day','cocurricular_details','cocurricular_time','cocurricular_day','administrative_details','administrative_time','administrative_day','research_hours','extension_hours','production_hours','cocurricular_hours','administrative_hours'] as const;
+const PROFILE_FIELDS=['years_at_psu','academic_rank','govt_service_years','bachelors_degree','masters_degree','doctoral_degree','designation','consultation_schedule'] as const;
+const WORKLOAD_GROUPS=[
+ {key:'research',name:'Research',description:'Titles of research currently undertaken',details:'research_details',time:'research_time',day:'research_day',hours:'research_hours'},
+ {key:'extension',name:'Extension',description:'Extension activities currently undertaken',details:'extension_details',time:'extension_time',day:'extension_day',hours:'extension_hours'},
+ {key:'production',name:'Production',description:'Production activities currently undertaken',details:'production_details',time:'production_time',day:'production_day',hours:'production_hours'},
+ {key:'cocurricular',name:'Co-curricular Assignments',description:'Assignment or designation',details:'cocurricular_details',time:'cocurricular_time',day:'cocurricular_day',hours:'cocurricular_hours'},
+ {key:'administrative',name:'Administrative / Supervisory',description:'Assignment or designation',details:'administrative_details',time:'administrative_time',day:'administrative_day',hours:'administrative_hours'}
+] as const;
 const LABELS:Record<string,string>={
  years_at_psu:'Years at PSU',academic_rank:'Academic rank',govt_service_years:'Years in government service',
  bachelors_degree:'Bachelor’s degree',masters_degree:'Master’s degree',doctoral_degree:'Doctoral degree',designation:'Designation',
@@ -22,7 +30,6 @@ const LABELS:Record<string,string>={
  research_hours:'Research WHE',extension_hours:'Extension WHE',production_hours:'Production WHE',
  cocurricular_hours:'Co-curricular WHE',administrative_hours:'Administrative WHE'
 };
-const HOURS=new Set(['research_hours','extension_hours','production_hours','cocurricular_hours','administrative_hours']);
 const dayNames=['','M','T','W','Th','F'];
 const clock=(n:number)=>{const h=Math.floor(n/60);return `${((h+11)%12)+1}:${String(n%60).padStart(2,'0')}${h<12?' AM':' PM'}`};
 const numberOrNull=(s:string)=>s.trim()===''?null:Number(s);
@@ -146,6 +153,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  const [masterError,setMasterError]=useState('');
  const [courseDraft,setCourseDraft]=useState<Record<string,string>>({});
  const [detailDraft,setDetailDraft]=useState<Record<string,string>>({});
+ const [profilePanel,setProfilePanel]=useState<'academic'|'activities'|'summary'>('academic');
+ const [activityOpen,setActivityOpen]=useState('research');
  const [reason,setReason]=useState('');
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[message,setMessage]=useState('');
  const term=terms.find(t=>t.is_active);
@@ -231,8 +240,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  }
  async function saveDetails(){
   if(!supabase)return;setBusy(true);setMessage('');
-  const {error}=await supabase.rpc('admin_save_workload_details',{p_faculty_id:selectedFaculty,p_details:details});
-  if(error)setMessage(error.message);else{setMessage('Academic profile and supplementary workload information saved.');setDetailDraft({});await load();}
+  const {error}=await supabase.rpc('save_faculty_workload_profile',{p_faculty_id:selectedFaculty,p_details:details});
+  if(error)setMessage(error.message);else{setMessage('Faculty academic profile and activity details saved. Administrator-approved WHE values are preserved.');setDetailDraft({});await load();}
   setBusy(false);
  }
  async function download(){
@@ -266,7 +275,59 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     <label>Administrator justification<input minLength={10} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Verified teaching load against approved PSU faculty workload guidance"/></label>
     <div className="availability-dialog-actions"><button className="primary" disabled={busy||reason.trim().length<10} onClick={()=>void saveCourse()}>Save workload entry</button><button className="ghost" onClick={()=>setCourseDraft({})}>Cancel</button></div>
    </div>}
-   {isAdmin&&<div className="workload-edit"><h3>Faculty academic profile and supplementary workload</h3><div className="workload-fields">{FIELDS.map(k=><label key={k}>{LABELS[k]}{HOURS.has(k)?<input type="number" min="0" step=".5" value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>:<input value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>}</label>)}</div><button className="primary" disabled={busy} onClick={()=>void saveDetails()}>Save workload profile</button></div>}
+   <section className="workload-self-service">
+    <div className="workload-service-header">
+     <div><span className="kicker">PSU-ACA-031 · SECTIONS A AND B</span><h3>Faculty Profile and Other Assignments</h3><p>Complete the form one section at a time. Your saved information will be used in the faculty workload document.</p></div>
+     <button type="button" className="ghost" disabled={busy} onClick={()=>void saveDetails()}>{busy?'Saving…':'Save my information'}</button>
+    </div>
+    <div className="workload-section-nav" role="group" aria-label="Workload details">
+     <button type="button" className={profilePanel==='academic'?'selected':''} onClick={()=>setProfilePanel('academic')}>A. Academic Profile</button>
+     <button type="button" className={profilePanel==='activities'?'selected':''} onClick={()=>setProfilePanel('activities')}>B. Other Assignments</button>
+     <button type="button" className={profilePanel==='summary'?'selected':''} onClick={()=>setProfilePanel('summary')}>Workload Summary</button>
+    </div>
+    {profilePanel==='academic'&&<div className="workload-profile-pane">
+     <div className="workload-profile-intro"><h4>A. Academic Profile</h4><p>Identity and appointment details already recorded in your faculty account are displayed automatically.</p></div>
+     <div className="workload-identity">
+      <div><small>Faculty name</small><strong>{fac?[fac.last_name,fac.first_name,fac.middle_initial].filter(Boolean).join(', ').toUpperCase():'—'}</strong></div>
+      <div><small>Campus</small><strong>PSU Balabac Campus</strong></div>
+      <div><small>Department</small><strong>{fac?.department||'—'}</strong></div>
+      <div><small>Appointment</small><strong>{fac?.employment_type||'—'}</strong></div>
+     </div>
+     <div className="workload-profile-grid">
+      {PROFILE_FIELDS.map(k=><label key={k}>{LABELS[k]}<input type="text" maxLength={1200} value={details[k]==='0'?'':details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))} placeholder={k==='consultation_schedule'?'e.g., Tuesday · 1:00–3:00 PM':'Enter '+LABELS[k].toLowerCase()}/></label>)}
+     </div>
+    </div>}
+    {profilePanel==='activities'&&<div className="workload-profile-pane">
+     <h4>B. Research, Extension and Other Assignments</h4>
+     <p className="curriculum-note">The PSU template lists an activity or designation alongside its time and day. Leave fields blank when not applicable. WHE is reviewed by the administrator.</p>
+     <div className="workload-activity-list">{WORKLOAD_GROUPS.map((g,i)=><section key={g.key} className="workload-activity-card">
+      <button type="button" className="workload-activity-heading" aria-expanded={activityOpen===g.key} onClick={()=>setActivityOpen(activityOpen===g.key?'':g.key)}>
+       <span><strong>{i+2}. {g.name}</strong><small>{details[g.details]&&details[g.details]!=='0'?details[g.details]:'No activity recorded'}</small></span>
+       <span>{activityOpen===g.key?'▲':'▼'}</span>
+      </button>
+      {activityOpen===g.key&&<div className="workload-activity-fields">
+       <label className="activity-description">{g.description}<textarea rows={3} maxLength={1200} value={details[g.details]==='0'?'':details[g.details]} onChange={e=>setDetailDraft(prev=>({...prev,[g.details]:e.target.value}))} placeholder="Enter activity, title, or designation"/></label>
+       <label>Time<input value={details[g.time]==='0'?'':details[g.time]} maxLength={1200} onChange={e=>setDetailDraft(prev=>({...prev,[g.time]:e.target.value}))} placeholder="e.g., 2:00–4:00 PM"/></label>
+       <label>Day<input value={details[g.day]==='0'?'':details[g.day]} maxLength={1200} onChange={e=>setDetailDraft(prev=>({...prev,[g.day]:e.target.value}))} placeholder="e.g., Thursday"/></label>
+       <label>{LABELS[g.hours]} <small>{isAdmin?'Administrator verified':'Administrator controlled'}</small><input type="number" min={0} max={80} step=".5" disabled={!isAdmin} value={details[g.hours]} onChange={e=>setDetailDraft(prev=>({...prev,[g.hours]:e.target.value}))} placeholder="Not yet verified"/></label>
+      </div>}
+     </section>)}</div>
+    </div>}
+    {profilePanel==='summary'&&<div className="workload-profile-pane">
+     <h4>Summary of Workload</h4>
+     <p className="curriculum-note">Approved equivalent hours are shown separately from actual weekly teaching time. No unverified workload hours are assumed.</p>
+     <div className="workload-summary-grid">
+      <div><span>Scheduled teaching time</span><strong>{rows.length?String((rows.reduce((n,r)=>n+r.weeklyMinutes,0)/60).toFixed(1))+' hrs/wk':'Not available'}</strong></div>
+      <div><span>Regular teaching WHE</span><strong>{rows.filter(r=>(r.w?.load_category||'regular')==='regular').length&&rows.filter(r=>(r.w?.load_category||'regular')==='regular').every(r=>r.w?.whe!=null)?String(rows.filter(r=>(r.w?.load_category||'regular')==='regular').reduce((n,r)=>n+(r.w?.whe??0),0)):'Pending verification'}</strong></div>
+      <div><span>Extra teaching WHE</span><strong>{rows.filter(r=>r.w?.load_category==='extra').length&&rows.filter(r=>r.w?.load_category==='extra').every(r=>r.w?.whe!=null)?String(rows.filter(r=>r.w?.load_category==='extra').reduce((n,r)=>n+(r.w?.whe??0),0)):'—'}</strong></div>
+      {WORKLOAD_GROUPS.map(g=><div key={g.key}><span>{g.name} WHE</span><strong>{details[g.hours]!==''?details[g.hours]:'Pending verification'}</strong></div>)}
+     </div>
+    </div>}
+    <div className="workload-panel-actions">
+     <p>Details are saved to your faculty record for {term?term.academic_year+' · Semester '+term.semester:'the active semester'}.</p>
+     <button className="primary" type="button" disabled={busy} onClick={()=>void saveDetails()}>{busy?'Saving…':'Save faculty information'}</button>
+    </div>
+   </section>
    <div className="workload-download">
     <h3>Generate Faculty Workload</h3>
     <p>AIS automatically fills the stored PSU-ACA-031 Word template with this instructor's approved classes, rooms and meeting times.</p>
