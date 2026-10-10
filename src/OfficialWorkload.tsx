@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import JSZip from 'jszip';
 import { supabase } from './supabase';
+import { WorkloadMaster } from './WorkloadMaster';
 
 type Faculty={id:string;first_name:string;last_name:string;middle_initial:string|null;department:string;employment_type:string};
 type Term={id:number;academic_year:string;semester:number;is_active:boolean};
@@ -143,8 +144,6 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
  const [faculty,setFaculty]=useState<Faculty[]>([]),[terms,setTerms]=useState<Term[]>([]),[courses,setCourses]=useState<Course[]>([]),[offerings,setOfferings]=useState<Offering[]>([]),[sections,setSections]=useState<Section[]>([]),[venues,setVenues]=useState<Venue[]>([]),[meetings,setMeetings]=useState<Meeting[]>([]),[requests,setRequests]=useState<Request[]>([]),[classifications,setClassifications]=useState<WorkCourse[]>([]),[detailRows,setDetailRows]=useState<WorkDetails[]>([]),[publications,setPublications]=useState<Publication[]>([]);
  const [selectedFaculty,setSelectedFaculty]=useState(facultyId);
  const [template,setTemplate]=useState<File|null>(null);
- const [masterReady,setMasterReady]=useState(false);
- const [templateBusy,setTemplateBusy]=useState(false);
  const [courseDraft,setCourseDraft]=useState<Record<string,string>>({});
  const [detailDraft,setDetailDraft]=useState<Record<string,string>>({});
  const [reason,setReason]=useState('');
@@ -257,7 +256,8 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     <div className="availability-dialog-actions"><button className="primary" disabled={busy||reason.trim().length<10} onClick={()=>void saveCourse()}>Save workload entry</button><button className="ghost" onClick={()=>setCourseDraft({})}>Cancel</button></div>
    </div>}
    {isAdmin&&<div className="workload-edit"><h3>Faculty academic profile and supplementary workload</h3><div className="workload-fields">{FIELDS.map(k=><label key={k}>{LABELS[k]}{HOURS.has(k)?<input type="number" min="0" step=".5" value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>:<input value={details[k]} onChange={e=>setDetailDraft(prev=>({...prev,[k]:e.target.value}))}/>}</label>)}</div><button className="primary" disabled={busy} onClick={()=>void saveDetails()}>Save workload profile</button></div>}
-   <div className="workload-download"><h3>Export to Microsoft Word (.docx)</h3><p>Upload the original PSU Faculty Workload <strong>PSU-ACA-031</strong> Word template. The export retains its tables and signatures while replacing historical faculty details and course entries with approved AIS data. A draft is visibly labeled if the timetable is not published.</p>
+   <div className="workload-download"><h3>Export to Microsoft Word (.docx)</h3>
+    <WorkloadMaster isAdmin={isAdmin} onReady={setTemplate}/><p>The secure campus master uses the blank <strong>PSU-ACA-031</strong> Word format and retains its official university tables and printed approval roles. No previous instructor's classes or signature should be present.</p>
     <label>Official PSU-ACA-031 template (.docx)<input type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={(e:ChangeEvent<HTMLInputElement>)=>setTemplate(e.target.files?.[0]||null)}/></label>
     <button className="primary" disabled={busy||!template||!fac||rows.length===0} onClick={()=>void download()}>Export editable PSU Workload</button>
     <p className="curriculum-note">Unverified student counts, WHE, research, extension and other workload values remain blank. Review every exported entry before collecting approvals.</p>
