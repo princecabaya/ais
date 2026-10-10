@@ -4,6 +4,7 @@ import { configured, domainOk, supabase } from './supabase';
 import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
+import { FacultyAvailability } from './FacultyAvailability';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -284,10 +285,11 @@ export function App() {
             </div>
             <div className="cards">
               <article><BookOpen /><strong>Course preferences</strong><p>Select courses across BEEd and BSE, rank preferences, and submit for administrative approval.</p><span>Available below</span></article>
-              <article><CalendarDays /><strong>Faculty availability</strong><p>Preferred and unavailable teaching periods, including administrator exceptions.</p><span>Coming in Phase 2</span></article>
+              <article><CalendarDays /><strong>Faculty availability</strong><p>Set preferred and unavailable teaching periods and review authorized exceptions.</p><span>Available below</span></article>
               <article><ClipboardList /><strong>Official workload</strong><p>Administrator-approved teaching assignments and editable FWL Word exports.</p><span>Coming in later phase</span></article>
             </div>
             <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />
+            <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />
             {profile.role === 'admin' && (
               <>
               <CurriculumManagement />
