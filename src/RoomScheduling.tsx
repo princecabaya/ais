@@ -14,9 +14,9 @@ type Publication={academic_term_id:number;published_at:string;revision:number};
 const DAYS=['Mon','Tue','Wed','Thu','Fri'];
 const TIMES=[450,540,630,780,870,960,1050];
 const clock=(minutes:number)=>{const h=Math.floor(minutes/60),m=minutes%60;return ((h+11)%12+1)+':'+String(m).padStart(2,'0')+(h>=12?' PM':' AM')};
-const days=(p:Proposal)=>p.meeting_pattern==='MW'?'Monday & Wednesday':p.meeting_pattern==='TTH'?'Tuesday & Thursday':p.meeting_pattern==='NSTP'?'Friday':DAYS[(p.pathfit_weekday??1)-1];
-const formPattern=(code:string,units:number|null)=>{const compact=code.toUpperCase().replace(/\s+/g,'');return compact.startsWith('NSTP')?'NSTP':compact.startsWith('PATHFIT')?'PATHFIT':units===3?'MW':'UNSUPPORTED'};
-type Pattern='MW'|'TTH'|'PATHFIT'|'NSTP';
+const days=(p:Proposal)=>p.meeting_pattern==='FIELD'?'Field placement':p.meeting_pattern==='MW'?'Monday & Wednesday':p.meeting_pattern==='TTH'?'Tuesday & Thursday':p.meeting_pattern==='NSTP'?'Friday':DAYS[(p.pathfit_weekday??1)-1];
+const formPattern=(code:string,units:number|null,title:string)=>{if(/field study|internship|practicum/i.test(title))return 'FIELD';const compact=code.toUpperCase().replace(/\s+/g,'');return compact.startsWith('NSTP')?'NSTP':compact.startsWith('PATHFIT')?'PATHFIT':units===3?'MW':'UNSUPPORTED'};
+type Pattern='MW'|'TTH'|'PATHFIT'|'NSTP'|'FIELD';
 export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boolean}){
  const [venues,setVenues]=useState<Venue[]>([]);
  const [requests,setRequests]=useState<Request[]>([]);
@@ -84,9 +84,9 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
  const assigned=requests.filter(r=>r.faculty_id===facultyId&&r.academic_term_id===currentTerm?.id);
  const selected=assigned.find(r=>String(r.id)===selectedRequest);
  const selectedCourse=selected?courseMap.get(offeringMap.get(selected.course_offering_id)?.curriculum_course_id??-1):undefined;
- const kind=selectedCourse?formPattern(selectedCourse.course_code,selectedCourse.units):'MW';
- const effectivePattern=kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':pattern;
- const duration=effectivePattern==='NSTP'?180:effectivePattern==='PATHFIT'?120:90;
+ const kind=selectedCourse?formPattern(selectedCourse.course_code,selectedCourse.units,selectedCourse.course_title):'MW';
+ const effectivePattern=kind==='FIELD'?'FIELD':kind==='NSTP'?'NSTP':kind==='PATHFIT'?'PATHFIT':pattern;
+ const duration=effectivePattern==='FIELD'?0:effectivePattern==='NSTP'?180:effectivePattern==='PATHFIT'?120:90;
  const permittedTimes=TIMES.filter(n=>n+duration<=1140&&!(n<720&&n+duration>780));
  const myProposals=proposals.filter(p=>p.faculty_id===facultyId&&p.academic_term_id===currentTerm?.id);
  const pending=proposals.filter(p=>p.status==='pending'&&p.academic_term_id===currentTerm?.id);
@@ -97,7 +97,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
  };
  async function submit(e:FormEvent){
   e.preventDefault();if(!supabase||!selected)return;setBusy(true);setMessage('');
-  const {error}=await supabase.rpc('submit_schedule_proposal',{p_course_request_id:selected.id,p_venue_id:Number(venue),p_pattern:effectivePattern,p_start_minute:permittedTimes.includes(start)?start:(permittedTimes[0]??450),p_pathfit_day:effectivePattern==='PATHFIT'?pathDay:null});
+  const {error}=await supabase.rpc('submit_schedule_proposal',{p_course_request_id:selected.id,p_venue_id:kind==='FIELD'?null:Number(venue),p_pattern:effectivePattern,p_start_minute:kind==='FIELD'?450:(permittedTimes.includes(start)?start:(permittedTimes[0]??450)),p_pathfit_day:effectivePattern==='PATHFIT'?pathDay:null});
   if(error)setMessage(error.message);
   else{setMessage('Schedule proposal submitted. Administrator approval is required.');await load();}
   setBusy(false);
@@ -141,19 +141,19 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
     <label>Approved course assignment<select required value={selectedRequest} onChange={e=>{const value=e.target.value;setSelectedRequest(value);setPattern('MW');setStart(450)}}>
      <option value="">Choose an approved course…</option>{assigned.map(r=><option key={r.id} value={r.id}>{label(r.course_offering_id)}</option>)}
     </select></label>
-    {selected&&<div className="schedule-advice">{kind==='NSTP'?'NSTP: one continuous 3-hour meeting on Friday.':kind==='PATHFIT'?'PATHFit: one continuous 2-hour meeting, Monday through Friday.':kind==='UNSUPPORTED'?'This course needs an administrator-defined meeting rule before it can be scheduled.':'Three-unit course: two linked 90-minute meetings at the same time on MW or Tuesday/Thursday.'}</div>}
+    {selected&&<div className="schedule-advice">{kind==='NSTP'?'NSTP: one continuous 3-hour meeting on Friday.':kind==='PATHFIT'?'PATHFit: one continuous 2-hour meeting, Monday through Friday.':kind==='FIELD'?'Field placement: no classroom or fixed timetable period required.':kind==='UNSUPPORTED'?'This course needs an administrator-defined meeting rule before it can be scheduled.':'Three-unit course: two linked 90-minute meetings at the same time on MW or Tuesday/Thursday.'}</div>}
     <div className="schedule-form-grid">
-     <label>Meeting pattern<select disabled={kind==='NSTP'||kind==='PATHFIT'||kind==='UNSUPPORTED'} value={effectivePattern} onChange={e=>setPattern(e.target.value as Pattern)}>
-      {kind==='NSTP'?<option value="NSTP">Friday · NSTP</option>:kind==='PATHFIT'?<option value="PATHFIT">Single day · PATHFit</option>:kind==='UNSUPPORTED'?<option value="MW">Rules pending</option>:<><option value="MW">Monday & Wednesday</option><option value="TTH">Tuesday & Thursday</option></>}
+     <label>Meeting pattern<select disabled={kind==='NSTP'||kind==='PATHFIT'||kind==='UNSUPPORTED'||kind==='FIELD'} value={effectivePattern} onChange={e=>setPattern(e.target.value as Pattern)}>
+      {kind==='FIELD'?<option value="FIELD">No fixed classroom schedule</option>:kind==='NSTP'?<option value="NSTP">Friday · NSTP</option>:kind==='PATHFIT'?<option value="PATHFIT">Single day · PATHFit</option>:kind==='UNSUPPORTED'?<option value="MW">Rules pending</option>:<><option value="MW">Monday & Wednesday</option><option value="TTH">Tuesday & Thursday</option></>}
      </select></label>
      {effectivePattern==='PATHFIT'&&<label>PATHFit weekday<select value={pathDay} onChange={e=>setPathDay(Number(e.target.value))}>{DAYS.map((d,i)=><option key={d} value={i+1}>{['Monday','Tuesday','Wednesday','Thursday','Friday'][i]}</option>)}</select></label>}
-     <label>Start time<select value={permittedTimes.includes(start)?start:(permittedTimes[0]??450)} onChange={e=>setStart(Number(e.target.value))}>{permittedTimes.map(n=><option key={n} value={n}>{clock(n)} – {clock(n+duration)}</option>)}</select></label>
-     <label>Room / venue<select required value={venue} onChange={e=>setVenue(e.target.value)}><option value="">Choose location…</option>{venues.map(v=><option key={v.id} value={v.id}>{v.name} · {v.venue_type}</option>)}</select></label>
+     {kind!=='FIELD'&&<label>Start time<select value={permittedTimes.includes(start)?start:(permittedTimes[0]??450)} onChange={e=>setStart(Number(e.target.value))}>{permittedTimes.map(n=><option key={n} value={n}>{clock(n)} – {clock(n+duration)}</option>)}</select></label>}
+     {kind!=='FIELD'&&<label>Room / venue<select required value={venue} onChange={e=>setVenue(e.target.value)}><option value="">Choose location…</option>{venues.map(v=><option key={v.id} value={v.id}>{v.name} · {v.venue_type}</option>)}</select></label>}
     </div>
-    <button className="primary" disabled={busy||!selected||!venue||kind==='UNSUPPORTED'} type="submit">Submit schedule for approval</button>
+    <button className="primary" disabled={busy||!selected||(kind!=='FIELD'&&!venue)||kind==='UNSUPPORTED'} type="submit">Submit schedule for approval</button>
    </form>
    <h3>My schedule requests</h3><div className="selection-rows">
-    {myProposals.length?myProposals.map(p=><div className="selection-row" key={p.id}><div><strong>{label(p.course_offering_id)}</strong><p>{days(p)} · {clock(p.start_minute)}–{clock(p.start_minute+p.duration_minutes)} · {venueMap.get(p.venue_id)?.name||'Venue'} · <strong>{p.status}</strong></p>{p.decision_note&&<small>Administrator: {p.decision_note}</small>}</div>{p.status==='pending'&&<button className="ghost" disabled={busy} type="button" onClick={()=>void withdraw(p.id)}>Withdraw</button>}</div>):<p>No schedule proposals yet. First obtain approval for a course preference in Course Selection.</p>}
+    {myProposals.length?myProposals.map(p=><div className="selection-row" key={p.id}><div><strong>{label(p.course_offering_id)}</strong><p>{p.meeting_pattern==='FIELD'?'Field placement (no fixed session)':days(p)+' · '+clock(p.start_minute)+'–'+clock(p.start_minute+p.duration_minutes)} · {p.meeting_pattern==='FIELD'?'No room required':venueMap.get(p.venue_id)?.name||'Venue'} · <strong>{p.status}</strong></p>{p.decision_note&&<small>Administrator: {p.decision_note}</small>}</div>{p.status==='pending'&&<button className="ghost" disabled={busy} type="button" onClick={()=>void withdraw(p.id)}>Withdraw</button>}</div>):<p>No schedule proposals yet. First obtain approval for a course preference in Course Selection.</p>}
    </div>
   </>:tab==='timetable'?<>
     {!isPublished&&<p className="curriculum-note">{isAdmin?'Administrator preview: this timetable has not been published.':'The official timetable is not yet published. Approved course allocations remain visible in your course requests.'}</p>}
