@@ -133,7 +133,7 @@ export function RoomScheduling({facultyId,isAdmin}:{facultyId:string;isAdmin:boo
   </div>
   {loading?<p>Loading schedule information…</p>:tab==='propose'?<>
    <form className="schedule-proposal-form" onSubmit={submit}>
-    <label>Approved course assignment<select required value={selectedRequest} onChange={e=>{const value=e.target.value;setSelectedRequest(value);const r=assigned.find(x=>String(x.id)===value);const c=r?courseMap.get(offeringMap.get(r.course_offering_id)?.curriculum_course_id??-1):undefined;const p=c?formPattern(c.course_code,c.units):'MW';setPattern('MW');setStart(450)}}>
+    <label>Approved course assignment<select required value={selectedRequest} onChange={e=>{const value=e.target.value;setSelectedRequest(value);setPattern('MW');setStart(450)}}>
      <option value="">Choose an approved course…</option>{assigned.map(r=><option key={r.id} value={r.id}>{label(r.course_offering_id)}</option>)}
     </select></label>
     {selected&&<div className="schedule-advice">{kind==='NSTP'?'NSTP: one continuous 3-hour meeting on Friday.':kind==='PATHFIT'?'PATHFit: one continuous 2-hour meeting, Monday through Friday.':kind==='UNSUPPORTED'?'This course needs an administrator-defined meeting rule before it can be scheduled.':'Three-unit course: two linked 90-minute meetings at the same time on MW or Tuesday/Thursday.'}</div>}
