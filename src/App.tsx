@@ -4,6 +4,7 @@ import { configured, domainOk, supabase } from './supabase';
 import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
 import { CourseSelection } from './CourseSelection';
+import { GeneralInformation } from './GeneralInformation';
 import { FacultyAvailability } from './FacultyAvailability';
 import { SchedulePreview } from './SchedulePreview';
 import { RoomScheduling } from './RoomScheduling';
@@ -299,6 +300,7 @@ export function App() {
               </div>
               <div className="workspace-nav-tabs">
                 {[
+                  {id:'information',label:'General Information',icon:BookOpen},
                   {id:'courses',label:'1. Select Courses',icon:BookOpen},
                   {id:'preview',label:'2. Schedule Preview',icon:CalendarDays},
                   {id:'availability',label:'3. Availability',icon:CalendarDays},
@@ -321,6 +323,7 @@ export function App() {
               </div>
             </nav>
             <div className="workspace-content" key={workspaceTab}>
+              {workspaceTab === 'information' && <GeneralInformation />}
               {workspaceTab === 'courses' && <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
               {workspaceTab === 'preview' && <SchedulePreview facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
               {workspaceTab === 'availability' && <FacultyAvailability facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
