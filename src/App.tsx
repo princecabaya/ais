@@ -29,9 +29,8 @@ const normal = (value: string) => value.toUpperCase().trim().replace(/\s+/g, ' '
 export function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [step, setStep] = useState<'email' | 'otp' | 'password'>('email');
+  const [step, setStep] = useState<'email' | 'link-sent' | 'password' | 'profile'>('email');
   const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [first, setFirst] = useState('');
@@ -79,15 +78,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (session?.user.id) void loadProfile(session.user.id);
-    else setProfile(null);
+    if (session?.user.id) {
+      void loadProfile(session.user.id);
+      setStep((current) => current === 'profile' ? 'profile' : 'password');
+    } else setProfile(null);
   }, [session?.user.id]);
 
   useEffect(() => {
     if (profile?.role === 'admin') void loadInvites();
   }, [profile?.role]);
 
-  async function sendOtp(e: FormEvent) {
+  async function sendConfirmationLink(e: FormEvent) {
     e.preventDefault();
     setMessage('');
     if (!domainOk(email)) {
@@ -99,26 +100,10 @@ export function App() {
       const { data: allowed, error: allowErr } = await supabase!.rpc('is_invited_email', { candidate_email: email.trim().toLowerCase() });
       if (allowErr) throw allowErr;
       if (!allowed) throw new Error('This email is not on the administrator invitation list.');
-      const { error } = await supabase!.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: true } });
+      const { error } = await supabase!.auth.signInWithOtp({ email: email.trim().toLowerCase(), options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/` } });
       if (error) throw error;
-      setStep('otp');
-      setMessage('Verification code sent. Check your PSU corporate mailbox.');
-    } catch (err) {
-      setMessage((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function verify(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setMessage('');
-    try {
-      const { error } = await supabase!.auth.verifyOtp({ email: email.trim().toLowerCase(), token: otp.trim(), type: 'email' });
-      if (error) throw error;
-      setStep('password');
-      setMessage('Email verified. Set a strong password to continue.');
+      setStep('link-sent');
+      setMessage('A secure confirmation or sign-in link has been requested. Open the latest email and follow its link to return here.');
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
@@ -137,7 +122,7 @@ export function App() {
       const { error } = await supabase!.auth.updateUser({ password });
       if (error) throw error;
       setPassword('');
-      setStep('email');
+      setStep('profile');
       setMessage('Password saved. Complete your faculty profile.');
     } catch (err) {
       setMessage((err as Error).message);
@@ -200,7 +185,6 @@ export function App() {
     await supabase?.auth.signOut();
     setProfile(null);
     setStep('email');
-    setOtp('');
     setMessage('Signed out.');
   }
 
@@ -245,26 +229,24 @@ export function App() {
           <div className="panel auth">
             <div className="iconhead"><Mail /><span>Faculty access</span></div>
             {step === 'email' ? (
-              <form onSubmit={sendOtp}>
+              <form onSubmit={sendConfirmationLink}>
                 <h2>Verify your university email</h2>
                 <p>Your address must be pre-authorized by the scheduling administrator.</p>
                 <label>PSU corporate email<input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="faculty@psu.palawan.edu.ph" /></label>
-                <button disabled={busy} className="primary">{busy ? 'Sending…' : 'Send verification code'}</button>
+                <button disabled={busy} className="primary">{busy ? 'Sending…' : 'Send confirmation link'}</button>
               </form>
             ) : (
-              <form onSubmit={verify}>
-                <h2>Enter verification code</h2>
-                <p>Check {email} for a code from Supabase Auth.</p>
-                <label>One-time code<input autoComplete="one-time-code" required inputMode="numeric" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit code" /></label>
-                <button disabled={busy} className="primary">Verify email</button>
-                <button type="button" className="link" onClick={() => setStep('email')}>Use another email</button>
-              </form>
+              <div className="link-confirmation">
+                <h2>Check your PSU email inbox</h2>
+                <p>Open the newest message for <strong>{email}</strong> and click its confirmation or sign-in link. You will return to this website to set a password and complete your profile.</p>
+                <button type="button" className="link" onClick={() => setStep('email')}>Use another email or resend link</button>
+              </div>
             )}
           </div>
         ) : !profile ? (
           <div className="panel auth">
             <div className="iconhead"><UserRound /><span>First-time account setup</span></div>
-            {step === 'password' ? (
+            {step !== 'profile' ? (
               <form onSubmit={setNewPassword}>
                 <h2>Create your password</h2>
                 <label>Password (12+ characters)<input type="password" autoComplete="new-password" required minLength={12} value={password} onChange={(e) => setPassword(e.target.value)} /></label>
@@ -306,7 +288,7 @@ export function App() {
             {profile.role === 'admin' && (
               <div className="panel admin">
                 <div className="iconhead"><ShieldCheck /><span>Administrator · Faculty authorization</span></div>
-                <p>Only the listed PSU email accounts may begin OTP registration.</p>
+                <p>Only the listed PSU email accounts may begin confirmation-link registration.</p>
                 <form className="inviteform" onSubmit={addInvite}>
                   <label>Faculty email<input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required placeholder="instructor@psu.palawan.edu.ph" /></label>
                   <label>Department<select value={inviteDept} onChange={(e) => setInviteDept(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
