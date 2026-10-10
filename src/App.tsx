@@ -11,7 +11,7 @@ type Profile = {
   first_name: string;
   last_name: string;
   middle_initial: string | null;
-  department: 'BEEd' | 'BSE';
+  department: 'BEEd' | 'BSE' | 'Administration';
   employment_type: 'regular' | 'part_time';
   role: 'faculty' | 'admin';
   status: 'active' | 'pending' | 'disabled';
@@ -37,13 +37,15 @@ export function App() {
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [mi, setMi] = useState('');
-  const [department, setDepartment] = useState<'BEEd' | 'BSE'>('BEEd');
+  const [department, setDepartment] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
   const [employment, setEmployment] = useState<'regular' | 'part_time'>('regular');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteDept, setInviteDept] = useState<'BEEd' | 'BSE'>('BEEd');
+  const [inviteDept, setInviteDept] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
+  const [inviteRole, setInviteRole] = useState<'faculty' | 'admin'>('faculty');
+  const [adminEmails, setAdminEmails] = useState<string[]>([]);
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -58,6 +60,9 @@ export function App() {
       .order('created_at', { ascending: false });
     if (error) setMessage(error.message);
     else setInvites((data || []) as Invite[]);
+    const { data: authorizations, error: authError } = await supabase!.from('administrator_authorizations').select('email');
+    if (authError) setMessage(authError.message);
+    else setAdminEmails((authorizations || []).map((row) => row.email as string));
   }
 
   useEffect(() => {
@@ -177,9 +182,13 @@ export function App() {
       if (!domainOk(inviteEmail)) throw new Error('Only PSU corporate email addresses are allowed.');
       const { error } = await supabase!.from('faculty_invitations').insert({ email: inviteEmail.trim().toLowerCase(), department: inviteDept, invited_by: session!.user.id });
       if (error) throw error;
+      if (inviteRole === 'admin') {
+        const { error: grantError } = await supabase!.rpc('grant_administrator', { candidate_email: inviteEmail.trim().toLowerCase() });
+        if (grantError) throw grantError;
+      }
       setInviteEmail('');
       await loadInvites();
-      setMessage('Faculty email authorized. Share the portal address with the faculty member.');
+      setMessage(inviteRole === 'admin' ? 'Administrator email authorized. Share the portal address for PSU email verification.' : 'Faculty email authorized. Share the portal address with the faculty member.');
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
@@ -272,7 +281,7 @@ export function App() {
                 </div>
                 <label>Middle initial<input maxLength={2} value={mi} onChange={(e) => setMi(e.target.value)} placeholder="A." /></label>
                 <div className="two">
-                  <label>Faculty affiliation<select value={department} onChange={(e) => setDepartment(e.target.value as 'BEEd' | 'BSE')}><option>BEEd</option><option>BSE</option></select></label>
+                  <label>Faculty affiliation<select value={department} onChange={(e) => setDepartment(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
                   <label>Employment type<select value={employment} onChange={(e) => setEmployment(e.target.value as 'regular' | 'part_time')}><option value="regular">Regular</option><option value="part_time">Part-time</option></select></label>
                 </div>
                 <button disabled={busy} className="primary">Save profile</button>
@@ -300,7 +309,8 @@ export function App() {
                 <p>Only the listed PSU email accounts may begin OTP registration.</p>
                 <form className="inviteform" onSubmit={addInvite}>
                   <label>Faculty email<input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required placeholder="instructor@psu.palawan.edu.ph" /></label>
-                  <label>Department<select value={inviteDept} onChange={(e) => setInviteDept(e.target.value as 'BEEd' | 'BSE')}><option>BEEd</option><option>BSE</option></select></label>
+                  <label>Department<select value={inviteDept} onChange={(e) => setInviteDept(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
+                  <label>Role<select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as 'faculty' | 'admin')}><option value="faculty">Faculty</option><option value="admin">Administrator</option></select></label>
                   <button className="primary" disabled={busy}>Authorize email</button>
                 </form>
                 <h3>Authorized email list</h3>
@@ -308,7 +318,7 @@ export function App() {
                   {invites.length ? invites.map((value) => (
                     <div key={value.email}>
                       <span>{value.email}<small>{value.department}</small></span>
-                      <span className="pill">{value.used_at ? 'Registered' : 'Invited'}</span>
+                      <span className="pill">{adminEmails.includes(value.email) ? 'Admin · ' : ''}{value.used_at ? 'Registered' : 'Invited'}</span>
                     </div>
                   )) : <p>No invitations yet. Add your first faculty email.</p>}
                 </div>
