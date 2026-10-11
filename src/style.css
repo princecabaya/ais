@@ -1112,3 +1112,34 @@ footer span { color: var(--orange-700); font-weight: 700; }
 @media(max-width:900px){
   .app:not(.app--signed-in) > main > .auth-entry{max-width:600px;margin-inline:auto}
 }
+
+
+/* Faculty-grouped administrator approval accordion */
+.faculty-review-group{border:1px solid #d9e7f1;border-radius:.9rem;margin:.75rem 0;background:#fff;overflow:hidden}
+.faculty-review-toggle{display:flex;align-items:center;justify-content:space-between;gap:.75rem;width:100%;padding:1rem;background:#f0f7fd;border:0;text-align:left;color:#154b78;cursor:pointer}
+.faculty-review-toggle>span:first-child{min-width:0;display:grid;gap:.3rem}
+.faculty-review-toggle strong{font-size:.91rem}
+.faculty-review-toggle small{font-size:.79rem;color:#698197;line-height:1.4}
+.faculty-review-toggle>span:last-child{font-size:1.1rem;flex:0 0 auto}
+.faculty-review-content{padding:.8rem;display:grid;gap:.8rem}
+.faculty-review-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:.75rem;font-size:.8rem}
+.faculty-review-toolbar .link{font-size:.79rem;padding:.25rem}
+.faculty-review-course-list{display:grid;gap:.6rem;max-height:390px;overflow-y:auto}
+.faculty-review-course{border:1px solid #e2eaf2;border-radius:.75rem;padding:.75rem;background:#fff}
+.faculty-review-check{display:flex;align-items:flex-start;gap:.65rem}
+.faculty-review-check>input{width:17px;height:17px;flex:0 0 auto;margin-top:.15rem;accent-color:#1c6198}
+.faculty-review-check>span{display:grid;gap:.3rem;min-width:0}
+.faculty-review-check strong{font-size:.86rem;color:#194e7a}
+.faculty-review-check small{font-size:.78rem;color:#6b8299;line-height:1.45;font-weight:400}
+.faculty-review-override{margin:.65rem 0 0 1.6rem}
+.faculty-review-override summary{font-size:.75rem;color:#286996;cursor:pointer}
+.faculty-review-override-inputs{display:grid;gap:.6rem;margin-top:.7rem}
+.faculty-review-override-inputs label{font-size:.77rem}
+.faculty-review-override-inputs input,.faculty-review-override-inputs select{min-width:0;padding:.55rem .6rem;font-size:.8rem}
+.faculty-review-decision{padding:.9rem;border:1px solid #d9e7f1;background:#f6faff;border-radius:.85rem;display:grid;gap:.8rem}
+.faculty-review-decision-fields{display:grid;grid-template-columns:1fr 1.4fr;gap:.65rem}
+.faculty-review-decision-fields label{font-size:.8rem;min-width:0}
+.faculty-review-decision-fields input,.faculty-review-decision-fields select{min-width:0;font-size:.82rem;padding:.62rem .7rem}
+.faculty-review-decision-fields .faculty-review-note{grid-column:1/-1}
+.faculty-review-decision>.primary,.faculty-review-decision>.ghost{justify-self:stretch}
+@media(max-width:780px){.faculty-review-decision-fields{grid-template-columns:1fr}.faculty-review-decision-fields .faculty-review-note{grid-column:auto}}
