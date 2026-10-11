@@ -48,6 +48,7 @@ export function App() {
   const [step, setStep] = useState<'email' | 'link-sent' | 'password' | 'profile'>('email');
   const [authMode, setAuthMode] = useState<'login' | 'activate'>('login');
   const [email, setEmail] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [first, setFirst] = useState('');
@@ -108,24 +109,50 @@ export function App() {
   async function signInWithPassword(e: FormEvent) {
     e.preventDefault();
     setMessage('');
-    if (!domainOk(email)) {
-      setMessage('Enter your PSU corporate email address (@psu.palawan.edu.ph).');
+    const identifier = loginIdentifier.trim();
+    if (!identifier) {
+      setMessage('Enter your registered username or PSU email.');
+      return;
+    }
+    if (identifier.includes('@') && !domainOk(identifier)) {
+      setMessage('Use your registered @psu.palawan.edu.ph email or your faculty username.');
+      return;
+    }
+    if (!identifier.includes('@') && !/^[a-zA-Z0-9._-]{3,30}$/.test(identifier)) {
+      setMessage('Enter a valid registered username (3–30 letters, numbers, dots, underscores, or hyphens).');
       return;
     }
     setBusy(true);
     try {
-      const { error } = await supabase!.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      if (error) throw error;
+      if (identifier.includes('@')) {
+        const { error } = await supabase!.auth.signInWithPassword({
+          email: identifier.toLowerCase(),
+          password,
+        });
+        if (error) throw error;
+      } else {
+        // Username is privately resolved inside the Supabase Edge Function.
+        // The function validates the password through Supabase Auth; it never
+        // exposes the associated email for incorrect credentials.
+        const { data, error } = await supabase!.functions.invoke('username-login', {
+          body: { username: identifier.toLowerCase(), password },
+        });
+        if (error || !data?.access_token || !data?.refresh_token) {
+          throw new Error('Invalid username or password.');
+        }
+        const { error: sessionError } = await supabase!.auth.setSession({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+        });
+        if (sessionError) throw sessionError;
+      }
       setPassword('');
       setMessage('');
     } catch (err) {
-      const text = (err as Error).message;
-      setMessage(text.toLowerCase().includes('invalid login credentials')
-        ? 'Incorrect PSU email or password. Check your details, or use account activation if you have not registered.'
-        : text);
+      const detail = (err as Error).message;
+      setMessage(/invalid|credential|login/i.test(detail)
+        ? 'Incorrect email/username or password. Check your details or activate your account if you have not registered.'
+        : 'Unable to log in right now. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -285,10 +312,10 @@ export function App() {
               <form onSubmit={signInWithPassword}>
                 <h2>Log in to your faculty account</h2>
                 <p>For registered PSU faculty members and administrators.</p>
-                <label>PSU corporate email
-                  <input type="email" autoComplete="username" required value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="faculty@psu.palawan.edu.ph" />
+                <label>PSU email or username
+                  <input type="text" autoComplete="username" required value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
+                    placeholder="cabayacruz or faculty@psu.palawan.edu.ph" />
                 </label>
                 <label>Password
                   <input type="password" autoComplete="current-password" required
