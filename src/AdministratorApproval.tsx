@@ -37,6 +37,8 @@ export function AdministratorApproval(){
  const [weekday,setWeekday]=useState(1);
  const [start,setStart]=useState(450);
  const [reason,setReason]=useState('');
+ const [courseReasons,setCourseReasons]=useState<Record<number,string>>({});
+ const [scheduleReasons,setScheduleReasons]=useState<Record<number,string>>({});
  const [publishNote,setPublishNote]=useState('');
  const [message,setMessage]=useState('');
  const [loading,setLoading]=useState(true);
@@ -123,7 +125,37 @@ export function AdministratorApproval(){
   else{setMessage('Approved sessions rescheduled. Publish the updated timetable again before faculty can see it.');setEditId(null);await load();}
   setBusy(false);
  }
- async function publish(){
+ async function decideCourse(requestId:number,approve:boolean){
+  if(!supabase||busy)return;
+  const note=(courseReasons[requestId]||'').trim();
+  if(note.length<5){setMessage('Enter an approval or decline reason of at least 5 characters.');return}
+  if(!window.confirm(approve?'Approve this faculty course allocation?':'Decline this faculty course request?'))return;
+  setBusy(true);setMessage('');
+  const {error}=await supabase.rpc('decide_course_preference',{p_request_id:requestId,p_approve:approve,p_note:note});
+  if(error)setMessage(error.message);
+  else{
+   setCourseReasons(prev=>{const next={...prev};delete next[requestId];return next});
+   setMessage(approve?'Course approved. Review its proposed meeting under Pending room schedules.':'Course request declined and instructor notified.');
+   await load();
+  }
+  setBusy(false);
+ }
+ async function decideSchedule(proposalId:number,approve:boolean){
+  if(!supabase||busy)return;
+  const note=(scheduleReasons[proposalId]||'').trim();
+  if(note.length<10){setMessage('Enter a schedule decision justification of at least 10 characters.');return}
+  if(!window.confirm(approve?'Approve this schedule after checking room and faculty conflicts?':'Reject this schedule proposal?'))return;
+  setBusy(true);setMessage('');
+  const {error}=await supabase.rpc('decide_schedule_proposal',{p_id:proposalId,p_approve:approve,p_reason:note});
+  if(error)setMessage(error.message);
+  else{
+   setScheduleReasons(prev=>{const next={...prev};delete next[proposalId];return next});
+   setMessage(approve?'Schedule approved. Publish the timetable when ready.':'Schedule rejected and instructor notified.');
+   await load();
+  }
+  setBusy(false);
+ }
+  async function publish(){
   if(!supabase)return;setBusy(true);setMessage('');
   const {error}=await supabase.rpc('admin_publish_schedule',{p_justification:publishNote.trim()});
   if(error)setMessage(error.message);
@@ -146,8 +178,45 @@ export function AdministratorApproval(){
   </div>
   {loading?<p>Loading administrative records…</p>:tab==='overview'?<>
    <div className="admin-approval-columns">
-    <div><h3>Pending course allocations</h3>{pendingAssignments.length?pendingAssignments.map(r=><div className="admin-review-item" key={r.id}><strong>{courseText(r.course_offering_id)}</strong><p>{profName(r.faculty_id)} · Preference #{r.preference_rank}</p><small>{r.motivation||'No qualification statement supplied'}</small></div>):<p>No outstanding course requests.</p>}<p className="curriculum-note">Approve or reject these in Course Selection → Admin review. Qualifications are advisory; the administrator makes the decision.</p></div>
-    <div><h3>Pending room schedules</h3>{pendingSchedules.length?pendingSchedules.map(p=><div className="admin-review-item" key={p.id}><strong>{courseText(p.course_offering_id)}</strong><p>{profName(p.faculty_id)} · {patternLabel(p)} · {p.meeting_pattern==='FIELD'?'No room required':clock(p.start_minute)+' · '+(vMap.get(p.venue_id)?.name||'Venue')}</p></div>):<p>No outstanding schedules.</p>}<p className="curriculum-note">Use Room and Schedule Assignment → Admin approvals to validate and decide pending proposals.</p></div>
+    <div>
+     <h3>Pending course allocations</h3>
+     {pendingAssignments.length?pendingAssignments.map(r=><div className="admin-review-item" key={r.id}>
+      <strong>{courseText(r.course_offering_id)}</strong>
+      <p>{profName(r.faculty_id)} · Preference #{r.preference_rank}</p>
+      <small>{r.motivation||'No qualification statement supplied; review credentials before approving.'}</small>
+      <label className="central-decision-note">Decision reason
+       <input type="text" minLength={5} maxLength={1000} value={courseReasons[r.id]||''}
+        onChange={e=>setCourseReasons(prev=>({...prev,[r.id]:e.target.value}))}
+        placeholder="e.g., Qualified instructor and workload capacity"/>
+      </label>
+      <div className="central-approval-actions">
+       <button className="primary" type="button" disabled={busy||(courseReasons[r.id]||'').trim().length<5}
+        onClick={()=>void decideCourse(r.id,true)}>Approve course</button>
+       <button className="ghost" type="button" disabled={busy||(courseReasons[r.id]||'').trim().length<5}
+        onClick={()=>void decideCourse(r.id,false)}>Decline</button>
+      </div>
+     </div>):<p>No outstanding course requests.</p>}
+     <p className="curriculum-note">Approval assigns a faculty member to the specific student block. The system validates competing assignments and instructor time overlaps before saving. A separate schedule approval may still be needed.</p>
+    </div>
+    <div>
+     <h3>Pending room schedules</h3>
+     {pendingSchedules.length?pendingSchedules.map(p=><div className="admin-review-item" key={p.id}>
+      <strong>{courseText(p.course_offering_id)}</strong>
+      <p>{profName(p.faculty_id)} · {patternLabel(p)} · {p.meeting_pattern==='FIELD'?'No room required':clock(p.start_minute)+' · '+(vMap.get(p.venue_id)?.name||'Venue')}</p>
+      <label className="central-decision-note">Schedule justification
+       <input type="text" minLength={10} maxLength={1000} value={scheduleReasons[p.id]||''}
+        onChange={e=>setScheduleReasons(prev=>({...prev,[p.id]:e.target.value}))}
+        placeholder="Confirm faculty, block and room availability"/>
+      </label>
+      <div className="central-approval-actions">
+       <button className="primary" type="button" disabled={busy||(scheduleReasons[p.id]||'').trim().length<10}
+        onClick={()=>void decideSchedule(p.id,true)}>Approve schedule</button>
+       <button className="ghost" type="button" disabled={busy||(scheduleReasons[p.id]||'').trim().length<10}
+        onClick={()=>void decideSchedule(p.id,false)}>Reject</button>
+      </div>
+     </div>):<p>No outstanding schedules.</p>}
+     <p className="curriculum-note">Approved schedules undergo database checks for overlapping instructors, rooms, student blocks and unavailable periods. Publish the timetable separately when ready.</p>
+    </div>
    </div>
   </>:tab==='conflicts'?<>
    <h3>Detected schedule conflicts</h3>{unresolved.length?unresolved.map((issue,i)=><div className="admin-conflict" key={i}><strong>{issue.kind}</strong><p>{issue.details}</p></div>):<p>No overlapping approved meetings found.</p>}
