@@ -13,6 +13,7 @@ import { AdministratorApproval } from './AdministratorApproval';
 import { OfficialWorkload } from './OfficialWorkload';
 import { AcademicTermSettings } from './AcademicTermSettings';
 import { FacultyHelpChat } from './FacultyHelpChat';
+import { MyAccount } from './MyAccount';
 import type { Session } from '@supabase/supabase-js';
 
 type Profile = {
@@ -395,6 +396,7 @@ export function App() {
               </div>
               <div className="workspace-nav-tabs">
                 {[
+                  {id:'account',label:'My Account',icon:UserRound},
                   {id:'information',label:'General Information',icon:BookOpen},
                   {id:'courses',label:'1. Select Courses',icon:BookOpen},
                   {id:'preview',label:'2. Schedule Preview',icon:CalendarDays},
@@ -419,6 +421,7 @@ export function App() {
               </div>
             </nav>
             <div className="workspace-content" key={workspaceTab}>
+              {workspaceTab === 'account' && <MyAccount facultyId={profile.id} onAccountSaved={()=>loadProfile(profile.id)} />}
               {workspaceTab === 'information' && <GeneralInformation />}
               {workspaceTab === 'courses' && <CourseSelection facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
               {workspaceTab === 'preview' && <SchedulePreview facultyId={profile.id} isAdmin={profile.role === 'admin'} />}
