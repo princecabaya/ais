@@ -1017,3 +1017,98 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .central-approval-actions button{flex:1 1 130px;justify-content:center;font-size:.85rem}
 .central-approval-actions button:disabled{opacity:.5;cursor:not-allowed}
 .admin-approval-columns .admin-review-item{margin:.75rem 0;padding:1rem}
+
+
+/* Refined public authentication card */
+.app:not(.app--signed-in) > main > .auth-entry {
+  width:100%;
+  max-width:none;
+  margin:0;
+  padding:clamp(1.25rem,2.2vw,1.75rem);
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:1.1rem;
+  background:#fff;
+}
+.auth-entry .iconhead{
+  margin:0;
+  gap:.55rem;
+  font-size:.85rem;
+  font-weight:700;
+  color:#275a81;
+}
+.auth-entry .auth-mode-switch{
+  margin:0;
+  padding:.25rem;
+  gap:.25rem;
+  border-radius:.85rem;
+  background:#edf4fa;
+}
+.auth-entry .auth-mode-switch button{
+  padding:.68rem .55rem;
+  font-size:.87rem;
+  border-radius:.65rem;
+  min-height:44px;
+}
+.auth-entry > form{
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-start;
+  align-items:stretch;
+  gap:.85rem;
+  width:100%;
+  flex:0 0 auto;
+  margin:0;
+}
+.auth-entry .auth-introduction{
+  display:grid;
+  gap:.3rem;
+  margin:0 0 .25rem;
+}
+.auth-entry .auth-introduction h2{
+  margin:0;
+  font-size:clamp(1.35rem,2vw,1.65rem);
+  line-height:1.22;
+  letter-spacing:-.025em;
+  color:#163f66;
+}
+.auth-entry .auth-introduction p{
+  margin:0;
+  max-width:40ch;
+  font-size:.87rem;
+  line-height:1.5;
+  color:#617b93;
+}
+.auth-entry form label{
+  display:grid;
+  gap:.38rem;
+  margin:0;
+  font-size:.85rem;
+  font-weight:700;
+}
+.auth-entry form input{
+  margin:0;
+  min-height:47px;
+  padding:.65rem .85rem;
+  border-radius:.75rem;
+  font-size:.92rem;
+}
+.auth-entry form .primary{
+  min-height:47px;
+  margin-top:.25rem;
+  padding:.7rem 1rem;
+  font-size:.95rem;
+  box-shadow:0 8px 18px rgba(213,107,29,.15);
+}
+.auth-entry .link-confirmation{
+  display:grid;
+  gap:.8rem;
+  margin:0;
+}
+.auth-entry .link-confirmation h2,
+.auth-entry .link-confirmation p{margin:0}
+@media(max-width:900px){
+  .app:not(.app--signed-in) > main > .auth-entry{max-width:600px;margin-inline:auto}
+}
