@@ -1143,3 +1143,18 @@ footer span { color: var(--orange-700); font-weight: 700; }
 .faculty-review-decision-fields .faculty-review-note{grid-column:1/-1}
 .faculty-review-decision>.primary,.faculty-review-decision>.ghost{justify-self:stretch}
 @media(max-width:780px){.faculty-review-decision-fields{grid-template-columns:1fr}.faculty-review-decision-fields .faculty-review-note{grid-column:auto}}
+
+
+/* COS and part-time workload: optional supplementary activity sections */
+.workload-optional-notice{
+  margin:.75rem 0;
+  padding:.8rem 1rem;
+  border:1px solid #d4e6f3;
+  border-left:4px solid #287ab5;
+  border-radius:.75rem;
+  background:#f0f8fe;
+  color:#275574;
+  font-size:.86rem;
+  line-height:1.55;
+}
+.workload-optional-notice strong{color:#174c76}
