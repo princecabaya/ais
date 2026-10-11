@@ -124,9 +124,15 @@ async function exportUsingTemplate(template:File,faculty:Faculty,term:Term,entri
  put(total,3,5,details.extension_hours||'');
  put(total,3,7,details.cocurricular_hours||'');
  put(total,4,5,details.administrative_hours||'');
- const required=[regularTotal,extraTotal,...['research_hours','extension_hours','production_hours','cocurricular_hours','administrative_hours'].map(k=>details[k]||'')];
- const canTotal=required.every(v=>v.trim()!==''&&!Number.isNaN(Number(v)));
- const totalWhe=canTotal?String(required.reduce((n,v)=>n+Number(v),0)):'________';
+ // Supplementary duties are optional for COS and part-time appointments.
+ // Leave their individual WHE cells blank, but treat omitted duties as zero
+ // when calculating the document total. Missing TEACHING hours are never zero-filled.
+ const optionalSupplementary=faculty.employment_type==='cos'||faculty.employment_type==='part_time';
+ const additionalHours=['research_hours','extension_hours','production_hours','cocurricular_hours','administrative_hours']
+  .map(k=>details[k]?.trim()||'');
+ const values=[regularTotal,extraTotal,...additionalHours.map(v=>optionalSupplementary&&v===''?'0':v)];
+ const canTotal=values.every(v=>v!==''&&Number.isFinite(Number(v)));
+ const totalWhe=canTotal?String(values.reduce((n,v)=>n+Number(v),0)):'________';
  setCell(children(children(total,'tr')[5],'tc')[3],`TOTAL NO. OF HOURS: ${totalWhe} hrs. `);
  // Blank historical assignment content in template when no structured activity data is supplied.
  const research=children(tables[3],'tr')[children(tables[3],'tr').length-1];
@@ -218,6 +224,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     weeklyMinutes:slots.reduce((n,x)=>n+x.end_minute-x.start_minute,0),w};
   }).sort((a,b)=>a.sortKey.localeCompare(b.sortKey)||a.id-b.id);
  },[courses,offerings,sections,venues,meetings,requests,classifications,selectedFaculty,term?.id]);
+ const supplementaryOptional=fac?.employment_type==='cos'||fac?.employment_type==='part_time';
  const fullTime=fac?.employment_type!=='part_time';
  const computed=calculateFacultyWorkload(rows.map(r=>({
    id:r.id,curriculumCourseId:r.curriculumCourseId,courseCode:r.code,courseTitle:r.title,units:r.units,
@@ -336,7 +343,10 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
     </div>}
     {profilePanel==='activities'&&<div className="workload-profile-pane">
      <h4>B. Research, Extension and Other Assignments</h4>
-     <p className="curriculum-note">The PSU template lists an activity or designation alongside its time and day. Leave fields blank when not applicable. WHE is reviewed by the administrator.</p>
+     <p className="curriculum-note">{supplementaryOptional
+      ?'Optional for COS and Part-Time faculty. You may leave all five activity sections and their WHE fields blank and still generate your Word workload. Only record activities actually assigned to you.'
+      :'Enter activities actually assigned to you. Unverified WHE values remain blank until reviewed by the administrator.'}</p>
+     {supplementaryOptional&&<p className="workload-optional-notice"><strong>No supplementary duties?</strong> Skip this entire tab and generate your workload below. Blank activity fields will not prevent export.</p>}
      <div className="workload-activity-list">{WORKLOAD_GROUPS.map((g,i)=><section key={g.key} className="workload-activity-card">
       <button type="button" className="workload-activity-heading" aria-expanded={activityOpen===g.key} onClick={()=>setActivityOpen(activityOpen===g.key?'':g.key)}>
        <span><strong>{i+2}. {g.name}</strong><small>{details[g.details]&&details[g.details]!=='0'?details[g.details]:'No activity recorded'}</small></span>
@@ -357,7 +367,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
       <div><span>Scheduled teaching time</span><strong>{rows.length?String((rows.reduce((n,r)=>n+r.weeklyMinutes,0)/60).toFixed(1))+' hrs/wk':'Not available'}</strong></div>
       <div><span>Regular teaching WHE</span><strong>{regularCreditedHours===null?'Pending verification':String(regularCreditedHours)}</strong></div>
       <div><span>Extra teaching WHE</span><strong>{extraCreditedHours===null?'Pending verification':String(extraCreditedHours)}</strong></div>
-      {WORKLOAD_GROUPS.map(g=><div key={g.key}><span>{g.name} WHE</span><strong>{details[g.hours]!==''?details[g.hours]:'Pending verification'}</strong></div>)}
+      {WORKLOAD_GROUPS.map(g=><div key={g.key}><span>{g.name} WHE</span><strong>{details[g.hours]!==''?details[g.hours]:supplementaryOptional?'Not applicable':'Pending verification'}</strong></div>)}
      </div>
     </div>}
     <div className="workload-panel-actions">
@@ -368,6 +378,7 @@ export function OfficialWorkload({facultyId,isAdmin}:{facultyId:string;isAdmin:b
    <div className="workload-download">
     <h3>Generate Faculty Workload</h3>
     <p>AIS automatically fills the stored PSU-ACA-031 Word template with this instructor's approved classes, rooms and meeting times.</p>
+    {supplementaryOptional&&<p className="workload-optional-notice">Research, Extension, Production, Co-curricular, and Administrative activities are <strong>optional</strong> for {fac?.employment_type==='cos'?'COS':'Part-Time'} faculty. Leave unused sections blank; their empty WHE entries do not block Word generation or suppress the teaching workload total.</p>}
     <p className="curriculum-note"><strong>University template:</strong> {template?'Ready for automatic generation':'Loading or unavailable'}.</p>
     {masterError&&<div className="notice" role="alert">{masterError}</div>}
     {!published&&<p className="curriculum-note">The semester timetable is not yet published. The generated Word document will be marked as a draft.</p>}
