@@ -33,6 +33,25 @@ const DECLINE_REASONS=[
  'Administrative reassignment',
  'Other (custom reason)'
 ];
+const SCHEDULE_APPROVE_REASONS=[
+ 'Faculty, student block and room availability verified',
+ 'No teaching or classroom overlap detected',
+ 'Approved within campus teaching schedule',
+ 'Room allocation confirmed',
+ 'PATHFit / NSTP scheduling requirements satisfied',
+ 'Field placement does not require a classroom',
+ 'Other (custom reason)'
+];
+const SCHEDULE_REJECT_REASONS=[
+ 'Faculty schedule conflict',
+ 'Room already booked at the requested time',
+ 'Student block schedule conflict',
+ 'Faculty marked the requested period unavailable',
+ 'Requested room is unavailable',
+ 'Schedule does not meet campus scheduling policy',
+ 'Revise preferred meeting time or venue',
+ 'Other (custom reason)'
+];
 const WEEKDAYS=['Monday','Tuesday','Wednesday','Thursday','Friday'];
 const STARTS=[450,540,630,780,870,960,1050];
 const clock=(n:number)=>{const hour=Math.floor(n/60);return `${((hour+11)%12)+1}:${String(n%60).padStart(2,'0')} ${hour>=12?'PM':'AM'}`};
@@ -63,7 +82,11 @@ export function AdministratorApproval(){
  const [facultyDecisions,setFacultyDecisions]=useState<Record<string,{action:'approve'|'decline';reason:string;note:string}>>({});
  const [overrides,setOverrides]=useState<Record<number,{reason:string;note:string}>>({});
  const [batchStatus,setBatchStatus]=useState('');
- const [scheduleReasons,setScheduleReasons]=useState<Record<number,string>>({});
+ const [expandedScheduleFaculty,setExpandedScheduleFaculty]=useState<Record<string,boolean>>({});
+ const [selectedSchedules,setSelectedSchedules]=useState<Record<number,boolean>>({});
+ const [scheduleDecisions,setScheduleDecisions]=useState<Record<string,{action:'approve'|'reject';reason:string;note:string}>>({});
+ const [scheduleOverrides,setScheduleOverrides]=useState<Record<number,{reason:string;note:string}>>({});
+ const [scheduleBatchStatus,setScheduleBatchStatus]=useState('');
  const [publishNote,setPublishNote]=useState('');
  const [message,setMessage]=useState('');
  const [loading,setLoading]=useState(true);
@@ -165,6 +188,54 @@ export function AdministratorApproval(){
   setMessage(`${succeeded} of ${chosen.length} course request(s) ${decision.action==='approve'?'approved':'declined'}.`+
    (failures.length?' Could not process: '+failures.join(' | '):' Review pending room schedules for approved courses.'));
  }
+ const scheduleFacultyGroups=useMemo(()=>{
+  const groups=new Map<string,Proposal[]>();
+  pendingSchedules.forEach(p=>groups.set(p.faculty_id,[...(groups.get(p.faculty_id)||[]),p]));
+  return [...groups].map(([facultyId,items])=>({facultyId,items:items.sort((a,b)=>a.id-b.id)}))
+   .sort((a,b)=>profName(a.facultyId).localeCompare(profName(b.facultyId)));
+ },[pendingSchedules,faculty]);
+ function scheduleSelection(items:Proposal[]){return items.filter(p=>selectedSchedules[p.id]!==false)}
+ function scheduleDecisionFor(facultyId:string){
+  return scheduleDecisions[facultyId]||{action:'approve' as const,reason:SCHEDULE_APPROVE_REASONS[0],note:''};
+ }
+ function setScheduleDecision(facultyId:string,change:Partial<{action:'approve'|'reject';reason:string;note:string}>){
+  setScheduleDecisions(prev=>({...prev,[facultyId]:{...scheduleDecisionFor(facultyId),...change}}));
+ }
+ function scheduleReasonFor(proposalId:number,facultyId:string,action:'approve'|'reject'){
+  const settings=scheduleDecisionFor(facultyId);
+  const override=scheduleOverrides[proposalId];
+  const reason=override?.reason||settings.reason;
+  const note=(override?.note||settings.note).trim();
+  const allowed=action==='approve'?SCHEDULE_APPROVE_REASONS:SCHEDULE_REJECT_REASONS;
+  if(!allowed.includes(reason))return null;
+  if(reason==='Other (custom reason)'&&note.length<10)return null;
+  const combined=[reason==='Other (custom reason)'?'Special case':reason,note].filter(Boolean).join(' — ');
+  return combined.length>=10?combined:null;
+ }
+ async function processScheduleFaculty(facultyId:string,items:Proposal[]){
+  if(!supabase||busy)return;
+  const decision=scheduleDecisionFor(facultyId);
+  const chosen=scheduleSelection(items);
+  if(!chosen.length){setMessage('Select at least one pending room schedule.');return}
+  const reasons=chosen.map(p=>scheduleReasonFor(p.id,facultyId,decision.action));
+  if(reasons.some(x=>x===null)){setMessage('Choose a schedule reason or provide a special explanation of at least 10 characters.');return}
+  if(!window.confirm(`${decision.action==='approve'?'Approve':'Reject'} ${chosen.length} selected schedule(s) for ${profName(facultyId)}? Each schedule will be checked individually for conflicts.`))return;
+  setBusy(true);setMessage('');setScheduleBatchStatus('Processing selected schedules…');
+  let succeeded=0;const failures:string[]=[];
+  for(let i=0;i<chosen.length;i++){
+   const p=chosen[i];
+   setScheduleBatchStatus(`Processing ${i+1} of ${chosen.length}: ${courseText(p.course_offering_id)}`);
+   const {error}=await supabase.rpc('decide_schedule_proposal',{
+    p_id:p.id,p_approve:decision.action==='approve',p_reason:reasons[i]!
+   });
+   if(error)failures.push(`${courseText(p.course_offering_id)}: ${error.message}`);
+   else succeeded++;
+  }
+  await load();
+  setBusy(false);setScheduleBatchStatus('');
+  setMessage(`${succeeded} of ${chosen.length} schedule(s) ${decision.action==='approve'?'approved':'rejected'}.`+
+    (failures.length?' Some could not be processed: '+failures.join(' | '):' Check the timetable before publishing.'));
+ }
  const activeMeetings=meetings.filter(m=>m.academic_term_id===term?.id);
  const unresolved=useMemo(()=>{
   const issues:{kind:string;details:string}[]=[];
@@ -198,21 +269,6 @@ export function AdministratorApproval(){
   });
   if(error)setMessage(error.message);
   else{setMessage('Approved sessions rescheduled. Publish the updated timetable again before faculty can see it.');setEditId(null);await load();}
-  setBusy(false);
- }
- async function decideSchedule(proposalId:number,approve:boolean){
-  if(!supabase||busy)return;
-  const note=(scheduleReasons[proposalId]||'').trim();
-  if(note.length<10){setMessage('Enter a schedule decision justification of at least 10 characters.');return}
-  if(!window.confirm(approve?'Approve this schedule after checking room and faculty conflicts?':'Reject this schedule proposal?'))return;
-  setBusy(true);setMessage('');
-  const {error}=await supabase.rpc('decide_schedule_proposal',{p_id:proposalId,p_approve:approve,p_reason:note});
-  if(error)setMessage(error.message);
-  else{
-   setScheduleReasons(prev=>{const next={...prev};delete next[proposalId];return next});
-   setMessage(approve?'Schedule approved. Publish the timetable when ready.':'Schedule rejected and instructor notified.');
-   await load();
-  }
   setBusy(false);
  }
   async function publish(){
@@ -325,21 +381,88 @@ export function AdministratorApproval(){
     </div>
     <div>
      <h3>Pending room schedules</h3>
-     {pendingSchedules.length?pendingSchedules.map(p=><div className="admin-review-item" key={p.id}>
-      <strong>{courseText(p.course_offering_id)}</strong>
-      <p>{profName(p.faculty_id)} · {patternLabel(p)} · {p.meeting_pattern==='FIELD'?'No room required':clock(p.start_minute)+' · '+(vMap.get(p.venue_id)?.name||'Venue')}</p>
-      <label className="central-decision-note">Schedule justification
-       <input type="text" minLength={10} maxLength={1000} value={scheduleReasons[p.id]||''}
-        onChange={e=>setScheduleReasons(prev=>({...prev,[p.id]:e.target.value}))}
-        placeholder="Confirm faculty, block and room availability"/>
-      </label>
-      <div className="central-approval-actions">
-       <button className="primary" type="button" disabled={busy||(scheduleReasons[p.id]||'').trim().length<10}
-        onClick={()=>void decideSchedule(p.id,true)}>Approve schedule</button>
-       <button className="ghost" type="button" disabled={busy||(scheduleReasons[p.id]||'').trim().length<10}
-        onClick={()=>void decideSchedule(p.id,false)}>Reject</button>
-      </div>
-     </div>):<p>No outstanding schedules.</p>}
+     {scheduleFacultyGroups.length?scheduleFacultyGroups.map(group=>{
+      const fac=fMap.get(group.facultyId);
+      const decision=scheduleDecisionFor(group.facultyId);
+      const opened=expandedScheduleFaculty[group.facultyId]??scheduleFacultyGroups.length===1;
+      const selectedCount=scheduleSelection(group.items).length;
+      return <section className="faculty-review-group" key={group.facultyId}>
+       <button type="button" className="faculty-review-toggle" aria-expanded={opened}
+        onClick={()=>setExpandedScheduleFaculty(prev=>({...prev,[group.facultyId]:!opened}))}>
+        <span><strong>{profName(group.facultyId)}</strong>
+         <small>{fac?.department||'Faculty'} · {fac?.employment_type||'Appointment unrecorded'} · {group.items.length} pending schedules</small>
+        </span><span aria-hidden="true">{opened?'▴':'▾'}</span>
+       </button>
+       {opened&&<div className="faculty-review-content">
+        <div className="faculty-review-toolbar">
+         <strong>Select schedules ({selectedCount}/{group.items.length})</strong>
+         <button type="button" className="link" onClick={()=>setSelectedSchedules(prev=>{
+          const next={...prev};group.items.forEach(p=>{next[p.id]=true});return next;
+         })}>Select all</button>
+         <button type="button" className="link" onClick={()=>setSelectedSchedules(prev=>{
+          const next={...prev};group.items.forEach(p=>{next[p.id]=false});return next;
+         })}>Clear</button>
+        </div>
+        <div className="faculty-review-course-list">{group.items.map(p=>{
+         const override=scheduleOverrides[p.id];
+         const options=decision.action==='approve'?SCHEDULE_APPROVE_REASONS:SCHEDULE_REJECT_REASONS;
+         return <div className="faculty-review-course" key={p.id}>
+          <label className="faculty-review-check">
+           <input type="checkbox" checked={selectedSchedules[p.id]!==false}
+            onChange={e=>setSelectedSchedules(prev=>({...prev,[p.id]:e.target.checked}))}/>
+           <span><strong>{courseText(p.course_offering_id)}</strong>
+            <small>{patternLabel(p)} · {p.meeting_pattern==='FIELD'?'Field placement · no classroom':clock(p.start_minute)+'–'+clock(p.start_minute+p.duration_minutes)+' · '+(vMap.get(p.venue_id)?.name||'Venue')}</small>
+           </span>
+          </label>
+          <details className="faculty-review-override">
+           <summary>Special reason for this schedule (optional)</summary>
+           <div className="faculty-review-override-inputs">
+            <label>Reason
+             <select value={override?.reason||''} onChange={e=>setScheduleOverrides(prev=>({...prev,[p.id]:{reason:e.target.value,note:prev[p.id]?.note||''}}))}>
+              <option value="">Use faculty-level reason</option>
+              {options.map(item=><option key={item} value={item}>{item}</option>)}
+             </select>
+            </label>
+            <label>Additional explanation
+             <input type="text" maxLength={600} value={override?.note||''}
+              onChange={e=>setScheduleOverrides(prev=>({...prev,[p.id]:{reason:prev[p.id]?.reason||'',note:e.target.value}}))}
+              placeholder="Only if this schedule needs a special explanation"/>
+            </label>
+           </div>
+          </details>
+         </div>;
+        })}</div>
+        <div className="faculty-review-decision">
+         <div className="faculty-review-decision-fields">
+          <label>Decision
+           <select value={decision.action} onChange={e=>setScheduleDecision(group.facultyId,{
+            action:e.target.value as 'approve'|'reject',
+            reason:e.target.value==='approve'?SCHEDULE_APPROVE_REASONS[0]:SCHEDULE_REJECT_REASONS[0]
+           })}>
+            <option value="approve">Approve selected</option><option value="reject">Reject selected</option>
+           </select>
+          </label>
+          <label>Preset schedule reason
+           <select value={decision.reason} onChange={e=>setScheduleDecision(group.facultyId,{reason:e.target.value})}>
+            {(decision.action==='approve'?SCHEDULE_APPROVE_REASONS:SCHEDULE_REJECT_REASONS).map(x=><option key={x} value={x}>{x}</option>)}
+           </select>
+          </label>
+          <label className="faculty-review-note">Additional note {decision.reason==='Other (custom reason)'?'(required)':'(optional)'}
+           <input type="text" maxLength={600} value={decision.note}
+            onChange={e=>setScheduleDecision(group.facultyId,{note:e.target.value})}
+            placeholder="Enter an exception or special arrangement if needed"/>
+          </label>
+         </div>
+         <button className={decision.action==='approve'?'primary':'ghost'} type="button"
+          disabled={busy||selectedCount===0||(decision.reason==='Other (custom reason)'&&decision.note.trim().length<10)}
+          onClick={()=>void processScheduleFaculty(group.facultyId,group.items)}>
+          {busy?'Processing…':`${decision.action==='approve'?'Approve':'Reject'} ${selectedCount} selected`}
+         </button>
+        </div>
+       </div>}
+      </section>;
+     }):<p>No outstanding schedules.</p>}
+     {scheduleBatchStatus&&<p className="curriculum-note" role="status">{scheduleBatchStatus}</p>}
      <p className="curriculum-note">Approved schedules undergo database checks for overlapping instructors, rooms, student blocks and unavailable periods. Publish the timetable separately when ready.</p>
     </div>
    </div>
