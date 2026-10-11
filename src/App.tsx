@@ -297,8 +297,8 @@ export function App() {
             <p>Create a separate Supabase project and configure <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> in Vercel. The application does not connect to your examination database.</p>
           </div>
         ) : !session ? (
-          <div className="panel auth">
-            <div className="iconhead"><Mail /><span>Faculty access</span></div>
+          <div className="panel auth auth-entry">
+            <div className="iconhead"><Mail size={19}/><span>Faculty access</span></div>
             <div className="auth-mode-switch" role="group" aria-label="Choose faculty authentication">
               <button type="button" className={authMode === 'login' ? 'auth-mode-selected' : ''}
                 onClick={() => {setAuthMode('login');setStep('email');setMessage('');setPassword('');}}>
@@ -311,12 +311,11 @@ export function App() {
             </div>
             {authMode === 'login' ? (
               <form onSubmit={signInWithPassword}>
-                <h2>Log in to your faculty account</h2>
-                <p>For registered PSU faculty members and administrators.</p>
+                <div className="auth-introduction"><h2>Welcome back</h2><p>Sign in to manage your courses and teaching schedule.</p></div>
                 <label>PSU email or username
                   <input type="text" autoComplete="username" required value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="cabayacruz or faculty@psu.palawan.edu.ph" />
+                    placeholder="Username or PSU email" />
                 </label>
                 <label>Password
                   <input type="password" autoComplete="current-password" required
@@ -326,15 +325,10 @@ export function App() {
                 <button type="submit" className="primary" disabled={busy}>
                   {busy ? 'Logging in…' : 'Log In'}
                 </button>
-                <button type="button" className="link auth-activation-link"
-                  onClick={() => {setAuthMode('activate');setStep('email');setPassword('');setMessage('');}}>
-                  First time here? Activate your account
-                </button>
               </form>
             ) : step === 'email' ? (
               <form onSubmit={sendConfirmationLink}>
-                <h2>Activate your faculty account</h2>
-                <p>Your university email must first be authorized by the scheduling administrator.</p>
+                <div className="auth-introduction"><h2>Activate your account</h2><p>Use the PSU email address authorized by your campus administrator.</p></div>
                 <label>PSU corporate email
                   <input type="email" autoComplete="email" required value={email}
                     onChange={(e) => setEmail(e.target.value)}
