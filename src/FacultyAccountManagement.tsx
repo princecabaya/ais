@@ -51,7 +51,18 @@ export function FacultyAccountManagement(){
   else{setMessage(active?'Faculty account reactivated.':'Faculty account deactivated. Existing teaching records were retained.');setReason('');await load()}
   setBusy(false);
  }
- async function refreshMailCounts(){
+ async function queueMyTestEmail(){
+  if(!supabase)return;
+  if(!window.confirm('Queue a harmless test notification to your own registered PSU email? It will not change any faculty records.'))return;
+  setMailStatus('Queueing test notification…');
+  const {data,error}=await supabase.rpc('admin_queue_my_email_test');
+  if(error)setMailStatus('Could not queue test email: '+error.message);
+  else{
+   await refreshMailCounts();
+   setMailStatus('Test notification #'+data+' queued to your PSU inbox. In Google Apps Script run sendQueuedAISNotifications(), then refresh this queue.');
+  }
+ }
+  async function refreshMailCounts(){
   if(!supabase)return;
   const {data,error}=await supabase.from('faculty_change_notifications').select('email_status').limit(1000);
   if(error)setMailStatus(error.message);
@@ -74,6 +85,7 @@ export function FacultyAccountManagement(){
   </div>
   <div className="account-admin-mail">
    <div><strong>Faculty change notifications · Gmail</strong><p>Portal notices are saved automatically. The dedicated Gmail script delivers pending emails approximately every five minutes once configured.</p></div>
+   <button type="button" className="ghost" onClick={()=>void queueMyTestEmail()}>Queue test notification to my PSU email</button>
    <button type="button" className="ghost" onClick={()=>void refreshMailCounts()}>Refresh email queue</button>
    <p>Pending: {mailCounts.pending} · Sending: {mailCounts.sending} · Sent: {mailCounts.sent} · Failed: {mailCounts.failed}</p>
    {mailStatus&&<p role="status">{mailStatus}</p>}
