@@ -70,6 +70,12 @@ export function App() {
   async function loadProfile(userId: string) {
     const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).maybeSingle();
     if (error) setMessage(error.message);
+    if (data && (data as Profile).status === 'disabled') {
+      setProfile(null);
+      setMessage('This faculty account has been deactivated. Contact the campus administrator for assistance.');
+      await supabase!.auth.signOut();
+      return;
+    }
     setProfile((data as Profile | null) || null);
   }
 
