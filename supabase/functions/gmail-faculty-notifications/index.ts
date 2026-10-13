@@ -31,6 +31,19 @@ Deno.serve(async request=>{
    if(error)throw error;
    return result({items:items??[]});
   }
+  if(data.action==='claim_activation'){
+   const {data:items,error}=await db.rpc('claim_gmail_activation_emails',{p_limit:10});
+   if(error)throw error;
+   return result({items:items??[]});
+  }
+  if(data.action==='ack_activation'){
+   if(!Number.isSafeInteger(data.id)||typeof data.token!=='string'||typeof data.sent!=='boolean')return result({error:'Invalid acknowledgement'},400);
+   const {data:updated,error}=await db.rpc('ack_gmail_activation_email',{
+    p_id:data.id,p_token:data.token,p_sent:data.sent,p_error:typeof data.error==='string'?data.error.slice(0,280):null
+   });
+   if(error)throw error;
+   return result({acknowledged:updated===true});
+  }
   if(data.action==='ack'){
    const id=data.id,token=data.token,sent=data.sent;
    if(!Number.isSafeInteger(id)||typeof token!=='string'|| !/^[a-f0-9-]{36}$/i.test(token)||typeof sent!=='boolean')
