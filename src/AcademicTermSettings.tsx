@@ -27,7 +27,7 @@ export function AcademicTermSettings(){
   else window.location.reload();
  }
  return <section className="panel term-settings" id="term-settings">
-   <div className="selection-top"><div><span className="kicker">ADMINISTRATOR · ACADEMIC CALENDAR</span><h2>Course Selection Semester</h2><p>Choose which semester's prospectus subjects appear to faculty across BEEd and BSE.</p></div></div>
+   <div className="selection-top"><div><span className="kicker">ADMINISTRATOR · ACADEMIC CALENDAR</span><h2>Course Selection Semester</h2><p>Choose which semester's prospectus subjects appear to faculty across BEEd, BSE, and the 2026–2027 graduating BSA legacy cohort.</p></div></div>
    <p className="curriculum-note">Currently active: <strong>{current?`${current.academic_year} · ${current.semester===1?'First':'Second'} Semester`:'No active semester'}</strong>.</p>
    <div className="term-setting-fields">
     <label>Academic year<select value={year} onChange={e=>setYear(e.target.value)}>{academicYearOptions.map(y=><option value={y} key={y}>{y}</option>)}</select></label>
