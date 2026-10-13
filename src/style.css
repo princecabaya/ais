@@ -1294,3 +1294,52 @@ body,#root{width:100%;min-width:0}
 .invite-department-editor select{min-width:125px;width:auto;padding:.5rem .65rem;border-radius:.7rem}
 .invite-department-editor button{padding:.5rem .85rem;font-size:.78rem}
 @media(max-width:650px){.invite-admin-controls{width:100%;justify-content:flex-start}.invite-department-editor{width:100%}.invite-department-editor select{flex:1}}
+
+
+/* Vertical application navigation: icon-only, hover/focus expand, keyboard and touch support */
+.faculty-workspace-layout{display:grid;grid-template-columns:66px minmax(0,1fr);gap:1rem;align-items:start;width:100%;margin-top:1.2rem}
+.faculty-workspace-main{min-width:0;width:100%}
+.faculty-sidebar{
+ position:sticky;top:1rem;z-index:30;
+ width:66px;max-height:calc(100vh - 2rem);
+ background:#fff;border:1px solid #d7e5ef;border-radius:1rem;
+ box-shadow:0 8px 22px rgba(23,72,111,.12);
+ overflow-x:hidden;overflow-y:auto;
+ scrollbar-width:thin;
+ transition:width .2s ease,box-shadow .2s ease;
+}
+.faculty-sidebar:is(:hover,:focus-within),.faculty-sidebar.expanded{
+ width:254px;box-shadow:0 15px 35px rgba(23,72,111,.18)
+}
+.faculty-sidebar-heading{display:flex;align-items:center;gap:.7rem;padding:.72rem .65rem;border-bottom:1px solid #e6eef5;color:#154f7c;font-size:.89rem;font-weight:800;white-space:nowrap}
+.faculty-sidebar-icon-button{display:grid;place-items:center;width:44px;height:40px;min-width:44px;color:#175a88;border:0;border-radius:.65rem;background:#edf6fc;cursor:pointer}
+.faculty-sidebar-links{display:flex;flex-direction:column;gap:.23rem;padding:.5rem}
+.faculty-sidebar-link{
+ display:flex;align-items:center;gap:.85rem;text-align:left;
+ border:1px solid transparent;background:transparent;border-radius:.7rem;
+ width:100%;min-height:44px;padding:.65rem .75rem;color:#26597e;
+ font:inherit;font-weight:700;font-size:.82rem;white-space:nowrap;cursor:pointer;
+}
+.faculty-sidebar-link>svg:first-child{flex:0 0 20px}
+.faculty-sidebar-link:hover{background:#f0f7fd}
+.faculty-sidebar-link.selected{background:#1e659e;border-color:#1e659e;color:white}
+.faculty-sidebar-link.admin-active:not(.selected){background:#e9f3fc;color:#155a8b}
+.faculty-sidebar-text{opacity:0;visibility:hidden;transition:opacity .12s ease;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.faculty-sidebar:is(:hover,:focus-within) .faculty-sidebar-text,.faculty-sidebar.expanded .faculty-sidebar-text{opacity:1;visibility:visible}
+.faculty-sidebar-chevron{flex:0 0 auto;opacity:0;transition:transform .18s ease,opacity .12s ease}
+.faculty-sidebar-chevron.open{transform:rotate(180deg)}
+.faculty-sidebar:is(:hover,:focus-within) .faculty-sidebar-chevron,.faculty-sidebar.expanded .faculty-sidebar-chevron{opacity:1}
+.faculty-sidebar-admin{margin-top:.35rem;padding-top:.45rem;border-top:1px solid #e6eef5}
+.faculty-sidebar-submenu{display:flex;flex-direction:column;gap:.2rem;margin-top:.35rem}
+.faculty-sidebar-submenu .faculty-sidebar-link{padding-left:.75rem;font-size:.78rem}
+.faculty-sidebar-link:focus-visible,.faculty-sidebar-icon-button:focus-visible{outline:3px solid #f88e37;outline-offset:2px}
+@media(max-width:760px){
+ .faculty-workspace-layout{grid-template-columns:54px minmax(0,1fr);gap:.5rem}
+ .faculty-sidebar{width:54px;top:.4rem;max-height:calc(100dvh - .8rem)}
+ .faculty-sidebar:is(:hover,:focus-within),.faculty-sidebar.expanded{width:min(254px,calc(100vw - 64px))}
+ .faculty-sidebar-heading{padding:.45rem .3rem;gap:.45rem}
+ .faculty-sidebar-icon-button{width:42px;min-width:42px}
+ .faculty-sidebar-links{padding:.3rem}
+ .faculty-sidebar-link{padding:.65rem .55rem;gap:.8rem}
+}
+@media(prefers-reduced-motion:reduce){.faculty-sidebar,.faculty-sidebar-text,.faculty-sidebar-chevron{transition:none}}
