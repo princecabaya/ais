@@ -1283,3 +1283,14 @@ body,#root{width:100%;min-width:0}
 .notification-actions .ghost{padding:.4rem .7rem;font-size:.8rem}
 @media(max-width:900px){.account-admin-layout{grid-template-columns:1fr}.account-admin-entries{max-height:275px}}
 @media(max-width:570px){.account-admin-grid{grid-template-columns:1fr}.notification-item>div:first-child{flex-direction:column}}
+
+
+/* Admin invitation department correction */
+.invites .invite-admin-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap}
+.invite-admin-identity{min-width:0;overflow-wrap:anywhere}
+.invite-admin-controls{display:flex;align-items:center;justify-content:flex-end;gap:.55rem;flex-wrap:wrap;min-width:0}
+.invite-admin-controls>.ghost{padding:.5rem .8rem;font-size:.79rem}
+.invite-department-editor{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+.invite-department-editor select{min-width:125px;width:auto;padding:.5rem .65rem;border-radius:.7rem}
+.invite-department-editor button{padding:.5rem .85rem;font-size:.78rem}
+@media(max-width:650px){.invite-admin-controls{width:100%;justify-content:flex-start}.invite-department-editor{width:100%}.invite-department-editor select{flex:1}}
