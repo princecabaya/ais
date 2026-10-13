@@ -87,7 +87,7 @@ export function FacultyAccountManagement(){
      <label>Last name<input required value={draft.last_name} onChange={e=>edit('last_name',e.target.value)}/></label>
      <label>First name<input required value={draft.first_name} onChange={e=>edit('first_name',e.target.value)}/></label>
      <label>Middle initial<input maxLength={2} value={draft.middle_initial} onChange={e=>edit('middle_initial',e.target.value)}/></label>
-     <label>Department<select value={draft.department} onChange={e=>edit('department',e.target.value)}><option>BEEd</option><option>BSE</option><option>Administration</option></select></label>
+     <label>Department<select value={draft.department} onChange={e=>edit('department',e.target.value)}><option>BEEd</option><option>BSE</option><option>BSA</option><option>Administration</option></select></label>
      <label>Appointment<select value={draft.employment_type} onChange={e=>edit('employment_type',e.target.value)}><option value="regular">Regular</option><option value="tempo">Tempo</option><option value="cos">COS</option><option value="part_time">Part-Time</option></select></label>
      <label>Contact number<input value={draft.contact_number} onChange={e=>edit('contact_number',e.target.value)}/></label>
      <label>Office location<input value={draft.office_location} onChange={e=>edit('office_location',e.target.value)}/></label>
