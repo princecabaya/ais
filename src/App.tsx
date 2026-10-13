@@ -65,6 +65,8 @@ export function App() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteDept, setInviteDept] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
   const [inviteRole, setInviteRole] = useState<'faculty' | 'admin'>('faculty');
+  const [editingInviteEmail, setEditingInviteEmail] = useState<string | null>(null);
+  const [editingInviteDept, setEditingInviteDept] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
 
   async function loadProfile(userId: string) {
@@ -253,6 +255,26 @@ export function App() {
       setInviteEmail('');
       await loadInvites();
       setMessage(inviteRole === 'admin' ? 'Administrator email authorized. Share the portal address for PSU email verification.' : 'Faculty email authorized. Share the portal address with the faculty member.');
+    } catch (err) {
+      setMessage((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveInviteDepartment(inviteEmailAddress: string) {
+    if (!supabase || busy) return;
+    setBusy(true);
+    setMessage('');
+    try {
+      const { error } = await supabase.rpc('admin_correct_invitation_department', {
+        p_email: inviteEmailAddress,
+        p_department: editingInviteDept,
+      });
+      if (error) throw error;
+      await loadInvites();
+      setEditingInviteEmail(null);
+      setMessage('Invitation department corrected successfully. The faculty member can now activate their account under the correct program.');
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
@@ -451,9 +473,29 @@ export function App() {
                 <h3>Authorized email list</h3>
                 <div className="invites">
                   {invites.length ? invites.map((value) => (
-                    <div key={value.email}>
-                      <span>{value.email}<small>{value.department}</small></span>
-                      <span className="pill">{adminEmails.includes(value.email) ? 'Admin · ' : ''}{value.used_at ? 'Registered' : 'Invited'}</span>
+                    <div key={value.email} className="invite-admin-row">
+                      <span className="invite-admin-identity">{value.email}<small>{value.department}</small></span>
+                      <div className="invite-admin-controls">
+                        <span className="pill">{adminEmails.includes(value.email) ? 'Admin · ' : ''}{value.used_at ? 'Registered' : 'Invited'}</span>
+                        {!value.used_at && (editingInviteEmail===value.email ? (
+                          <div className="invite-department-editor">
+                            <select aria-label={`Department for ${value.email}`} value={editingInviteDept}
+                              onChange={e=>setEditingInviteDept(e.target.value as 'BEEd'|'BSE'|'Administration')}>
+                              <option value="BEEd">BEEd</option><option value="BSE">BSE</option>
+                              <option value="Administration">Administration</option>
+                            </select>
+                            <button type="button" className="primary" disabled={busy}
+                              onClick={()=>void saveInviteDepartment(value.email)}>Save</button>
+                            <button type="button" className="ghost" disabled={busy}
+                              onClick={()=>setEditingInviteEmail(null)}>Cancel</button>
+                          </div>
+                        ) : (
+                          <button type="button" className="ghost" onClick={()=>{
+                            setEditingInviteEmail(value.email);
+                            setEditingInviteDept(value.department as 'BEEd'|'BSE'|'Administration');
+                          }}>Edit department</button>
+                        ))}
+                      </div>
                     </div>
                   )) : <p>No invitations yet. Add your first faculty email.</p>}
                 </div>
