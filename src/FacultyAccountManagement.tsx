@@ -12,6 +12,7 @@ export function FacultyAccountManagement(){
  const [busy,setBusy]=useState(false);
  const [message,setMessage]=useState('');
  const [loading,setLoading]=useState(true);
+ const [mailStatus,setMailStatus]=useState('');
  const load=useCallback(async()=>{
   if(!supabase)return;setLoading(true);
   const {data,error}=await supabase.from('profiles')
@@ -49,11 +50,24 @@ export function FacultyAccountManagement(){
   else{setMessage(active?'Faculty account reactivated.':'Faculty account deactivated. Existing teaching records were retained.');setReason('');await load()}
   setBusy(false);
  }
+ async function dispatchEmail(){
+  if(!supabase)return;
+  setMailStatus('Checking email delivery configuration…');
+  const {data,error}=await supabase.functions.invoke('dispatch-faculty-notifications',{body:{}});
+  if(error)setMailStatus('Email dispatch unavailable. Notifications remain in the faculty portal.');
+  else if(!data?.configured)setMailStatus('Email delivery requires a verified sender domain and Resend API key; portal notices are active.');
+  else setMailStatus(`Emails sent: ${data.sent||0}; failed: ${data.failed||0}.`);
+ }
  const matches=users.filter(u=>[u.email,u.username,u.first_name,u.last_name,u.department].some(v=>v.toLowerCase().includes(search.toLowerCase())));
  return <section className="panel faculty-account-admin">
   <div className="selection-top"><div><span className="kicker">ADMINISTRATOR · FACULTY ACCESS</span>
    <h2>Faculty Account Management</h2><p>View and edit authorized faculty profiles, or deactivate access without deleting university records.</p></div>
    <button className="ghost" type="button" onClick={()=>void load()}>Refresh accounts</button>
+  </div>
+  <div className="account-admin-mail">
+   <div><strong>Faculty change notifications</strong><p>Notices are saved to each faculty inbox automatically. Email delivery requires a configured, verified sender domain.</p></div>
+   <button type="button" className="ghost" onClick={()=>void dispatchEmail()}>Send queued email notifications</button>
+   {mailStatus&&<p role="status">{mailStatus}</p>}
   </div>
   <div className="account-admin-layout">
    <aside className="account-admin-list">
