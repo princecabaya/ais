@@ -125,7 +125,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
  }
  return <section className="panel course-selection" id="course-selection">
   <div className="selection-top">
-   <div><span className="kicker">PHASE 2 · FACULTY COURSE PREFERENCES</span><h2>Course Selection</h2><p>Browse BEEd and BSE sections, rank preferred courses, and submit requests. Final allocation belongs to the campus administrator.</p></div>
+   <div><span className="kicker">PHASE 2 · FACULTY COURSE PREFERENCES</span><h2>Course Selection</h2><p>Browse BEEd, BSE, and legacy BSA Year 4 subjects, rank preferred courses, and submit requests. Final allocation belongs to the campus administrator.</p></div>
    <button className="ghost" type="button" onClick={()=>void load()}>Refresh</button>
   </div>
   <div className="selection-metrics">
@@ -144,7 +144,7 @@ export function CourseSelection({facultyId,isAdmin}:{facultyId:string;isAdmin:bo
    <div className="selection-browser">
     <div className="selection-browser-heading"><div><h3>Find your teaching subjects</h3><p>Choose a program and year level, then open a student block. Each block is requested independently.</p></div><button type="button" className="ghost" onClick={()=>{setProgram('ALL');setYear('ALL');setSection('ALL');setSearch('');setSortBy('block');setCollapsedBlocks([]);setSelectedCourseId(null)}}>Reset filters</button></div>
     <div className="selection-program-choices" role="group" aria-label="Filter program">
-     {[{value:'ALL',label:'All programs'},{value:'BEEd',label:'BEEd · Elementary Education'},{value:'BSE',label:'BSE · Entrepreneurship'}].map(p=><button type="button" key={p.value} className={program===p.value?'program-filter active':'program-filter'} onClick={()=>{setProgram(p.value);setYear('ALL');setSection('ALL');setSelectedCourseId(null)}}>{p.label}<small>{offerings.filter(o=>o.academic_term_id===active?.id&&o.status==='available'&&courseById.get(o.curriculum_course_id)?.verification_status==='verified'&&(p.value==='ALL'||sectionById.get(o.class_section_id)?.program===p.value)).length} offerings</small></button>)}
+     {[{value:'ALL',label:'All programs'},{value:'BEEd',label:'BEEd · Elementary Education'},{value:'BSE',label:'BSE · Entrepreneurship'},{value:'BSA',label:'BSA · Agriculture (4th Year · Phase-out)'}].map(p=><button type="button" key={p.value} className={program===p.value?'program-filter active':'program-filter'} onClick={()=>{setProgram(p.value);setYear('ALL');setSection('ALL');setSelectedCourseId(null)}}>{p.label}<small>{offerings.filter(o=>o.academic_term_id===active?.id&&o.status==='available'&&courseById.get(o.curriculum_course_id)?.verification_status==='verified'&&(p.value==='ALL'||sectionById.get(o.class_section_id)?.program===p.value)).length} offerings</small></button>)}
     </div>
     <div className="selection-filters">
      <label>Year level<select value={year} onChange={e=>{setYear(e.target.value);setSection('ALL')}}><option value="ALL">All year levels</option>{[1,2,3,4].map(n=><option value={n} key={n}>Year {n}</option>)}</select></label>
