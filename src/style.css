@@ -1253,3 +1253,33 @@ body,#root{width:100%;min-width:0}
  .app .workspace-tab{font-size:.76rem}
  .app .auth-entry .auth-mode-switch button{font-size:.8rem}
 }
+
+
+/* Faculty administrator profile controls and individual notices */
+.account-admin-layout{display:grid;grid-template-columns:minmax(245px,0.85fr) minmax(0,2fr);gap:1rem;margin:1rem 0}
+.account-admin-list,.account-admin-editor{min-width:0;border:1px solid #dce7f1;border-radius:1rem;background:#fff;padding:1rem}
+.account-admin-entries{max-height:640px;overflow-y:auto;display:grid;gap:.5rem;margin-top:1rem}
+.account-admin-entries button{text-align:left;display:grid;gap:.3rem;background:#f5f9fd;border:1px solid #dfe9f2;padding:.8rem;border-radius:.7rem;color:#164b76}
+.account-admin-entries button.selected{background:#e5f2fe;border-color:#1c6fa9}
+.account-admin-entries button small,.account-admin-entries button span{font-size:.75rem;color:#698298;overflow-wrap:anywhere}
+.account-admin-editor h3{margin:.2rem 0;color:#184c76}
+.account-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem;margin:1rem 0}
+.account-admin-grid label,.account-admin-editor label{min-width:0}
+.account-admin-editor input,.account-admin-editor select,.account-admin-editor textarea{width:100%;min-width:0}
+.account-admin-editor textarea{border:1px solid #d4e1ec;border-radius:.8rem;padding:.8rem;font:inherit}
+.account-admin-actions{display:flex;gap:.65rem;flex-wrap:wrap;margin-top:.7rem}
+.account-admin-actions button{flex:1 1 180px}
+.account-admin-mail{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem;padding:1rem;margin:.8rem 0;border:1px solid #d8e8f5;border-radius:.9rem;background:#eef7fd}
+.account-admin-mail>div{flex:1 1 300px}
+.account-admin-mail p{margin:.25rem 0;font-size:.83rem;color:#597790}
+.notifications-list{display:grid;gap:.75rem;margin-top:1rem}
+.notification-item{padding:1rem;border:1px solid #dde8f3;border-radius:.85rem;background:white}
+.notification-item.unread{border-left:4px solid #1e76b0;background:#f3f9ff}
+.notification-item>div:first-child{display:flex;align-items:start;justify-content:space-between;gap:.7rem;flex-wrap:wrap}
+.notification-item strong{color:#154b77}
+.notification-item small,.notification-actions span{font-size:.74rem;color:#688096}
+.notification-item p{margin:.6rem 0;color:#345b79;overflow-wrap:anywhere}
+.notification-actions{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.notification-actions .ghost{padding:.4rem .7rem;font-size:.8rem}
+@media(max-width:900px){.account-admin-layout{grid-template-columns:1fr}.account-admin-entries{max-height:275px}}
+@media(max-width:570px){.account-admin-grid{grid-template-columns:1fr}.notification-item>div:first-child{flex-direction:column}}
