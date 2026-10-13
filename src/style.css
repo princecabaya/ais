@@ -1158,3 +1158,98 @@ footer span { color: var(--orange-700); font-weight: 700; }
   line-height:1.55;
 }
 .workload-optional-notice strong{color:#174c76}
+
+
+/* Fluid, zoom-aware layout — desktop, tablets, phones and browser zoom. */
+html{width:100%;overflow-x:clip}
+body,#root{width:100%;min-width:0}
+.app{
+ width:100%;
+ max-width:none;
+ margin-inline:auto;
+ padding:clamp(.6rem,1.35vw,1.8rem);
+}
+.app > main,.app > header,.app > footer,
+.app .dashboard,.app .workspace-content,.app .workspace-content>.panel{
+ width:100%;
+ max-width:none;
+ min-width:0;
+}
+.app > main{gap:clamp(.7rem,1.2vw,1.35rem);padding-top:clamp(.7rem,1.2vw,1.35rem)}
+.app .dashboard{padding:clamp(.75rem,1.3vw,1.6rem)}
+.app .panel{padding:clamp(.8rem,1.3vw,1.45rem)}
+.app > header{padding:clamp(.7rem,1vw,1.2rem)}
+.app--signed-in .hero{padding:clamp(1rem,1.5vw,1.75rem)}
+/* Wide screens should not waste horizontal space in the dashboard navigation. */
+.app .workspace-nav{padding:clamp(.65rem,1vw,1.15rem)}
+.app .workspace-nav-tabs{min-width:0;max-width:100%}
+@media(min-width:1450px){
+ .app .workspace-nav-tabs{flex-wrap:wrap;overflow-x:visible}
+ .app .workspace-tab{flex:1 0 auto}
+}
+.app .workspace-content,.app .workspace-nav,
+.app .workspace-content>*,.app .dashboard>*{min-width:0;max-width:100%}
+.app .cards,.app .features{grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.app .selection-metrics,.app .curriculum-metrics,
+.app .availability-intro,.app .general-info-metrics{
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,175px),1fr));
+}
+.app .offering-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,285px),1fr))}
+.app .selection-top,.app .curriculum-heading{flex-wrap:wrap}
+.app .selection-top>div:first-child,.app .curriculum-heading>div:first-child{flex:1 1 330px;min-width:0}
+.app .selection-top>button,.app .curriculum-heading>button{flex:0 0 auto}
+/* Long field labels, names and form controls must not force grid tracks wider than the screen. */
+.app .panel input,.app .panel textarea,.app .panel select,
+.app .panel label{min-width:0;max-width:100%}
+.app .panel p,.app .panel strong,.app .panel small{overflow-wrap:break-word}
+.app .workload-activity-heading small{max-width:min(55vw,750px)}
+.app .admin-approval-columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(.7rem,1.2vw,1.25rem)}
+.app .admin-approval-columns>div{min-width:0}
+.app .faculty-review-decision-fields{grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))}
+.app .faculty-review-decision-fields .faculty-review-note{grid-column:1/-1}
+/* Wide tables stay legible and scroll inside their own module, never across the whole page. */
+.app .curriculum-table-wrap,.app .admin-report-table-wrap,.app .general-room-scroll,
+.app .availability-table-wrap,.app .preview-table-scroll,.app .curriculum-table-wrap{
+ width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;
+ -webkit-overflow-scrolling:touch;
+}
+.app .curriculum-table,.app .admin-report-table,.app .general-room-table,
+.app .availability-matrix,.app .preview-table{max-width:none}
+@media(max-width:1050px){
+ .app .admin-approval-columns{grid-template-columns:minmax(0,1fr)}
+ .app .selection-filters,.app .curriculum-filters,.app .schedule-form-grid{
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));
+ }
+ .app .inviteform{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+}
+@media(max-width:900px){
+ .app:not(.app--signed-in)>main{grid-template-columns:minmax(0,1fr)}
+ .app:not(.app--signed-in)>main>.auth-entry{width:100%;max-width:640px}
+}
+@media(max-width:640px){
+ .app{padding:.55rem}
+ .app .dashboard,.app .panel{padding:.75rem}
+ .app .workspace-nav{padding:.55rem;position:relative}
+ .app .workspace-tab{padding:.6rem .7rem;font-size:.81rem}
+ .app .selection-top{align-items:stretch}
+ .app .selection-top>button{width:100%}
+ .app .workload-profile-grid,.app .workload-identity,
+ .app .account-overview,.app .account-edit-grid,
+ .app .workload-activity-fields,.app .faculty-review-decision-fields{
+  grid-template-columns:minmax(0,1fr);
+ }
+ .app .workload-panel-actions{flex-direction:column;align-items:stretch}
+ .app .workload-panel-actions button{width:100%}
+ .app .workspace-nav-title{align-items:flex-start}
+ .app .faculty-review-toggle{padding:.75rem}
+ .app .faculty-review-content{padding:.55rem}
+}
+/* Accommodate browser zoom as the effective CSS viewport becomes narrower. */
+@media(max-width:420px){
+ .app{padding:.4rem}
+ .app .dashboard,.app .panel{padding:.6rem;border-radius:1rem}
+ .app .hero{padding:1rem}
+ .app .brand strong{font-size:.8rem}
+ .app .workspace-tab{font-size:.76rem}
+ .app .auth-entry .auth-mode-switch button{font-size:.8rem}
+}
