@@ -13,6 +13,7 @@ export function FacultyAccountManagement(){
  const [message,setMessage]=useState('');
  const [loading,setLoading]=useState(true);
  const [mailStatus,setMailStatus]=useState('');
+ const [mailCounts,setMailCounts]=useState({pending:0,sending:0,sent:0,failed:0});
  const load=useCallback(async()=>{
   if(!supabase)return;setLoading(true);
   const {data,error}=await supabase.from('profiles')
@@ -50,14 +51,21 @@ export function FacultyAccountManagement(){
   else{setMessage(active?'Faculty account reactivated.':'Faculty account deactivated. Existing teaching records were retained.');setReason('');await load()}
   setBusy(false);
  }
- async function dispatchEmail(){
+ async function refreshMailCounts(){
   if(!supabase)return;
-  setMailStatus('Checking email delivery configuration…');
-  const {data,error}=await supabase.functions.invoke('dispatch-faculty-notifications',{body:{}});
-  if(error)setMailStatus('Email dispatch unavailable. Notifications remain in the faculty portal.');
-  else if(!data?.configured)setMailStatus('Email delivery requires a verified sender domain and Resend API key; portal notices are active.');
-  else setMailStatus(`Emails sent: ${data.sent||0}; failed: ${data.failed||0}.`);
+  const {data,error}=await supabase.from('faculty_change_notifications').select('email_status').limit(1000);
+  if(error)setMailStatus(error.message);
+  else {
+   const totals={pending:0,sending:0,sent:0,failed:0};
+   (data||[]).forEach(item=>{
+    const key=item.email_status as keyof typeof totals;
+    if(key in totals)totals[key]++;
+   });
+   setMailCounts(totals);
+   setMailStatus('Queue status refreshed.');
+  }
  }
+ useEffect(()=>{void refreshMailCounts()},[]);
  const matches=users.filter(u=>[u.email,u.username,u.first_name,u.last_name,u.department].some(v=>v.toLowerCase().includes(search.toLowerCase())));
  return <section className="panel faculty-account-admin">
   <div className="selection-top"><div><span className="kicker">ADMINISTRATOR · FACULTY ACCESS</span>
@@ -65,8 +73,9 @@ export function FacultyAccountManagement(){
    <button className="ghost" type="button" onClick={()=>void load()}>Refresh accounts</button>
   </div>
   <div className="account-admin-mail">
-   <div><strong>Faculty change notifications</strong><p>Notices are saved to each faculty inbox automatically. Email delivery requires a configured, verified sender domain.</p></div>
-   <button type="button" className="ghost" onClick={()=>void dispatchEmail()}>Send queued email notifications</button>
+   <div><strong>Faculty change notifications · Gmail</strong><p>Portal notices are saved automatically. The dedicated Gmail script delivers pending emails approximately every five minutes once configured.</p></div>
+   <button type="button" className="ghost" onClick={()=>void refreshMailCounts()}>Refresh email queue</button>
+   <p>Pending: {mailCounts.pending} · Sending: {mailCounts.sending} · Sent: {mailCounts.sent} · Failed: {mailCounts.failed}</p>
    {mailStatus&&<p role="status">{mailStatus}</p>}
   </div>
   <div className="account-admin-layout">
