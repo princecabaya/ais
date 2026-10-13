@@ -90,7 +90,30 @@ function sendQueuedAISNotifications() {
         console.error('Could not update delivery status for notification ' + n.id);
       }
     }
-    console.log('AIS dispatch completed: ' + sent + ' sent, ' + failed + ' failed.');
+    const activationBatch=aisRequest({action:'claim_activation'});
+    let activationSent=0,activationFailed=0;
+    for(const notice of (activationBatch.items||[])){
+      let failure=null;
+      try{
+        if(!/^[^@\\s]+@psu\\.palawan\\.edu\\.ph$/i.test(notice.recipient))
+          throw new Error('Invalid corporate email');
+        MailApp.sendEmail({
+          to:notice.recipient,
+          subject:notice.subject,
+          body:notice.body,
+          name:'PSU Balabac AIS Notifications'
+        });
+        activationSent++;
+      }catch(e){
+        failure=String(e&&e.message?e.message:e).slice(0,200);
+        activationFailed++;
+      }
+      try{
+        aisRequest({action:'ack_activation',id:notice.id,token:notice.claim_token,
+          sent:failure===null,error:failure});
+      }catch(e){console.error('Activation notification status could not be updated: '+notice.id);}
+    }
+    console.log('AIS dispatch completed: '+sent+' notices sent, '+failed+' failed; '+activationSent+' activations sent, '+activationFailed+' failed.');
   } finally {
     lock.releaseLock();
   }
