@@ -90,12 +90,13 @@ function sendQueuedAISNotifications() {
         console.error('Could not update delivery status for notification ' + n.id);
       }
     }
+    if(MailApp.getRemainingDailyQuota()<1){console.log('No remaining quota for invitation emails.');return;}
     const activationBatch=aisRequest({action:'claim_activation'});
     let activationSent=0,activationFailed=0;
     for(const notice of (activationBatch.items||[])){
       let failure=null;
       try{
-        if(!/^[^@\\s]+@psu\\.palawan\\.edu\\.ph$/i.test(notice.recipient))
+        if(!String(notice.recipient).toLowerCase().endsWith('@psu.palawan.edu.ph'))
           throw new Error('Invalid corporate email');
         MailApp.sendEmail({
           to:notice.recipient,
