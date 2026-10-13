@@ -25,7 +25,7 @@ type Profile = {
   first_name: string;
   last_name: string;
   middle_initial: string | null;
-  department: 'BEEd' | 'BSE' | 'Administration';
+  department: 'BEEd' | 'BSE' | 'BSA' | 'Administration';
   employment_type: 'regular' | 'tempo' | 'cos' | 'part_time';
   role: 'faculty' | 'admin';
   status: 'active' | 'pending' | 'disabled';
@@ -57,16 +57,16 @@ export function App() {
   const [first, setFirst] = useState('');
   const [last, setLast] = useState('');
   const [mi, setMi] = useState('');
-  const [department, setDepartment] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
+  const [department, setDepartment] = useState<'BEEd' | 'BSE' | 'BSA' | 'Administration'>('BEEd');
   const [employment, setEmployment] = useState<'regular' | 'tempo' | 'cos' | 'part_time'>('regular');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteDept, setInviteDept] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
+  const [inviteDept, setInviteDept] = useState<'BEEd' | 'BSE' | 'BSA' | 'Administration'>('BEEd');
   const [inviteRole, setInviteRole] = useState<'faculty' | 'admin'>('faculty');
   const [editingInviteEmail, setEditingInviteEmail] = useState<string | null>(null);
-  const [editingInviteDept, setEditingInviteDept] = useState<'BEEd' | 'BSE' | 'Administration'>('BEEd');
+  const [editingInviteDept, setEditingInviteDept] = useState<'BEEd' | 'BSE' | 'BSA' | 'Administration'>('BEEd');
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
 
   async function loadProfile(userId: string) {
@@ -396,7 +396,7 @@ export function App() {
                 </div>
                 <label>Middle initial<input maxLength={2} value={mi} onChange={(e) => setMi(e.target.value)} placeholder="A." /></label>
                 <div className="two">
-                  <label>Faculty affiliation<select value={department} onChange={(e) => setDepartment(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
+                  <label>Faculty affiliation<select value={department} onChange={(e) => setDepartment(e.target.value as 'BEEd' | 'BSE' | 'BSA' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="BSA">BSA · Legacy (Phase-out)</option><option value="Administration">Campus Administration</option></select></label>
                   <label>Employment type<select value={employment} onChange={(e) => setEmployment(e.target.value as 'regular' | 'tempo' | 'cos' | 'part_time')}><option value="regular">Regular — Plantilla (Full-time)</option><option value="tempo">Tempo — Conditional Plantilla (Full-time)</option><option value="cos">COS — Contract of Service (Full-time)</option><option value="part_time">Part-time</option></select></label>
                 </div>
                 <button disabled={busy} className="primary">Save profile</button>
@@ -466,7 +466,7 @@ export function App() {
                 <p>Only the listed PSU email accounts may begin confirmation-link registration.</p>
                 <form className="inviteform" onSubmit={addInvite}>
                   <label>Faculty email<input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required placeholder="instructor@psu.palawan.edu.ph" /></label>
-                  <label>Department<select value={inviteDept} onChange={(e) => setInviteDept(e.target.value as 'BEEd' | 'BSE' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="Administration">Campus Administration</option></select></label>
+                  <label>Department<select value={inviteDept} onChange={(e) => setInviteDept(e.target.value as 'BEEd' | 'BSE' | 'BSA' | 'Administration')}><option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="BSA">BSA · Legacy (Phase-out)</option><option value="Administration">Campus Administration</option></select></label>
                   <label>Role<select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as 'faculty' | 'admin')}><option value="faculty">Faculty</option><option value="admin">Administrator</option></select></label>
                   <button className="primary" disabled={busy}>Authorize email</button>
                 </form>
@@ -480,8 +480,8 @@ export function App() {
                         {!value.used_at && (editingInviteEmail===value.email ? (
                           <div className="invite-department-editor">
                             <select aria-label={`Department for ${value.email}`} value={editingInviteDept}
-                              onChange={e=>setEditingInviteDept(e.target.value as 'BEEd'|'BSE'|'Administration')}>
-                              <option value="BEEd">BEEd</option><option value="BSE">BSE</option>
+                              onChange={e=>setEditingInviteDept(e.target.value as 'BEEd'|'BSE'|'BSA'|'Administration')}>
+                              <option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="BSA">BSA · Legacy (Phase-out)</option>
                               <option value="Administration">Administration</option>
                             </select>
                             <button type="button" className="primary" disabled={busy}
@@ -492,7 +492,7 @@ export function App() {
                         ) : (
                           <button type="button" className="ghost" onClick={()=>{
                             setEditingInviteEmail(value.email);
-                            setEditingInviteDept(value.department as 'BEEd'|'BSE'|'Administration');
+                            setEditingInviteDept(value.department as 'BEEd'|'BSE'|'BSA'|'Administration');
                           }}>Edit department</button>
                         ))}
                       </div>
