@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { BookOpen, CalendarDays, CheckCircle2, ClipboardList, LogOut, Mail, ShieldCheck, UserRound, Users } from 'lucide-react';
+import { CalendarDays, CheckCircle2, LogOut, Mail, ShieldCheck, UserRound, Users } from 'lucide-react';
 import { configured, domainOk, supabase } from './supabase';
 import { PSU_LOGO } from './psuLogo';
 import { CurriculumManagement } from './CurriculumManagement';
