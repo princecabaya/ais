@@ -29,7 +29,7 @@ export function FacultySidebar({active,onNavigate,isAdmin}:{
  const [expanded,setExpanded]=useState(false);
  const [adminOpen,setAdminOpen]=useState(()=>adminItems.some(x=>x.id===active));
  const adminSelected=adminItems.some(x=>x.id===active);
- const displayAdmin=adminOpen||adminSelected;
+ const displayAdmin=adminOpen;
  return <aside className={expanded?'faculty-sidebar expanded':'faculty-sidebar'}
   aria-label="Faculty workspace navigation"
   onMouseEnter={()=>setExpanded(true)} onMouseLeave={()=>setExpanded(false)}>
