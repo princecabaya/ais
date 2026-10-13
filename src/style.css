@@ -1343,3 +1343,14 @@ body,#root{width:100%;min-width:0}
  .faculty-sidebar-link{padding:.65rem .55rem;gap:.8rem}
 }
 @media(prefers-reduced-motion:reduce){.faculty-sidebar,.faculty-sidebar-text,.faculty-sidebar-chevron{transition:none}}
+
+/* Compact invitation management */
+.invite-bulk-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin:.75rem 0}
+.invite-bulk-toolbar input[type=search]{flex:1 1 210px;min-width:130px}
+.invite-bulk-toolbar select{flex:0 1 145px}
+.invite-bulk-toolbar .invite-select-all{display:inline-flex;flex-direction:row;align-items:center;gap:.5rem;white-space:nowrap;font-weight:600}
+.invite-select-all input,.invite-admin-identity input{width:17px;height:17px;accent-color:#1e659e;cursor:pointer;flex:none}
+.invite-admin-identity{display:flex;align-items:center;gap:.7rem;min-width:0;overflow-wrap:anywhere}
+.invite-admin-identity span{min-width:0}
+.invite-admin-identity small{display:block}
+@media(max-width:640px){.invite-bulk-toolbar>.primary{width:100%}.invite-admin-row{align-items:flex-start}}
