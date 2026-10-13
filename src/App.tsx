@@ -69,6 +69,9 @@ export function App() {
   const [editingInviteEmail, setEditingInviteEmail] = useState<string | null>(null);
   const [editingInviteDept, setEditingInviteDept] = useState<'BEEd' | 'BSE' | 'BSA' | 'Administration'>('BEEd');
   const [adminEmails, setAdminEmails] = useState<string[]>([]);
+  const [selectedInvites, setSelectedInvites] = useState<string[]>([]);
+  const [inviteFilter, setInviteFilter] = useState<'all'|'invited'|'registered'>('invited');
+  const [inviteSearch, setInviteSearch] = useState('');
 
   async function loadProfile(userId: string) {
     const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -255,7 +258,7 @@ export function App() {
       }
       setInviteEmail('');
       await loadInvites();
-      setMessage(inviteRole === 'admin' ? 'Administrator email authorized. Share the portal address for PSU email verification.' : 'Faculty email authorized. Share the portal address with the faculty member.');
+      setMessage('Email authorized. Activation instructions queued for Gmail delivery.');
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
@@ -283,7 +286,22 @@ export function App() {
     }
   }
 
-  async function logout() {
+  async function resendSelectedActivations(){
+    if(!supabase||busy||selectedInvites.length===0)return;
+    if(!window.confirm('Queue activation instructions for '+selectedInvites.length+' invited faculty member(s)?'))return;
+    setBusy(true);setMessage('');
+    try{
+      const {data,error}=await supabase.rpc('admin_resend_activation_emails',{p_emails:selectedInvites});
+      if(error)throw error;
+      setSelectedInvites([]);
+      setMessage(data>0
+        ?data+' invitation email(s) queued for Gmail delivery.'
+        :'No new emails queued. Selected invitations may already be pending or registered.');
+      await loadInvites();
+    }catch(err){setMessage((err as Error).message)}
+    finally{setBusy(false)}
+  }
+    async function logout() {
     await supabase?.auth.signOut();
     setProfile(null);
     setStep('email');
@@ -442,34 +460,52 @@ export function App() {
                   <label>Role<select value={inviteRole} onChange={(e) => setInviteRole(e.target.value as 'faculty' | 'admin')}><option value="faculty">Faculty</option><option value="admin">Administrator</option></select></label>
                   <button className="primary" disabled={busy}>Authorize email</button>
                 </form>
-                <h3>Authorized email list</h3>
+                <h3>Authorized Faculty</h3>
+                <div className="invite-bulk-toolbar">
+                  <input type="search" aria-label="Search invitations" value={inviteSearch}
+                    onChange={e=>setInviteSearch(e.target.value)} placeholder="Search faculty email or department"/>
+                  <select aria-label="Filter invitation status" value={inviteFilter}
+                    onChange={e=>{setInviteFilter(e.target.value as 'all'|'invited'|'registered');setSelectedInvites([])}}>
+                    <option value="invited">Invited</option><option value="registered">Registered</option><option value="all">All</option>
+                  </select>
+                  <label className="invite-select-all">
+                    <input type="checkbox" checked={(()=>{const v=invites.filter(x=>!x.used_at&&(inviteFilter!=='registered')&&(x.email.includes(inviteSearch.toLowerCase())||x.department.toLowerCase().includes(inviteSearch.toLowerCase())));return v.length>0&&v.every(x=>selectedInvites.includes(x.email))})()}
+                     onChange={e=>{const visible=invites.filter(x=>!x.used_at&&inviteFilter!=='registered'&&(x.email.includes(inviteSearch.toLowerCase())||x.department.toLowerCase().includes(inviteSearch.toLowerCase()))).map(x=>x.email);
+                       setSelectedInvites(prev=>e.target.checked?Array.from(new Set([...prev,...visible])):prev.filter(x=>!visible.includes(x)))}}
+                     disabled={inviteFilter==='registered'}/>
+                    Select all visible
+                  </label>
+                  <button className="primary" type="button" disabled={busy||selectedInvites.length===0} onClick={()=>void resendSelectedActivations()}>
+                    Resend activation ({selectedInvites.length})
+                  </button>
+                </div>
                 <div className="invites">
-                  {invites.length ? invites.map((value) => (
+                  {invites.filter(v=>(inviteFilter==='all'||(inviteFilter==='invited'?!v.used_at:!!v.used_at))
+                   &&(v.email.includes(inviteSearch.toLowerCase())||v.department.toLowerCase().includes(inviteSearch.toLowerCase())))
+                   .map(value=>(
                     <div key={value.email} className="invite-admin-row">
-                      <span className="invite-admin-identity">{value.email}<small>{value.department}</small></span>
+                      <label className="invite-admin-identity">
+                        <input type="checkbox" aria-label={`Select ${value.email}`}
+                         checked={selectedInvites.includes(value.email)} disabled={!!value.used_at}
+                         onChange={e=>setSelectedInvites(prev=>e.target.checked?[...prev,value.email]:prev.filter(x=>x!==value.email))}/>
+                        <span>{value.email}<small>{value.department}</small></span>
+                      </label>
                       <div className="invite-admin-controls">
-                        <span className="pill">{adminEmails.includes(value.email) ? 'Admin · ' : ''}{value.used_at ? 'Registered' : 'Invited'}</span>
-                        {!value.used_at && (editingInviteEmail===value.email ? (
+                        <span className="pill">{adminEmails.includes(value.email)?'Admin · ':''}{value.used_at?'Registered':'Invited'}</span>
+                        {!value.used_at&&(editingInviteEmail===value.email?(
                           <div className="invite-department-editor">
                             <select aria-label={`Department for ${value.email}`} value={editingInviteDept}
                               onChange={e=>setEditingInviteDept(e.target.value as 'BEEd'|'BSE'|'BSA'|'Administration')}>
-                              <option value="BEEd">BEEd</option><option value="BSE">BSE</option><option value="BSA">BSA · Legacy (Phase-out)</option>
-                              <option value="Administration">Administration</option>
+                              <option value="BEEd">BEEd</option><option value="BSE">BSE</option>
+                              <option value="BSA">BSA · Legacy (Phase-out)</option><option value="Administration">Administration</option>
                             </select>
-                            <button type="button" className="primary" disabled={busy}
-                              onClick={()=>void saveInviteDepartment(value.email)}>Save</button>
-                            <button type="button" className="ghost" disabled={busy}
-                              onClick={()=>setEditingInviteEmail(null)}>Cancel</button>
+                            <button type="button" className="primary" disabled={busy} onClick={()=>void saveInviteDepartment(value.email)}>Save</button>
+                            <button type="button" className="ghost" disabled={busy} onClick={()=>setEditingInviteEmail(null)}>Cancel</button>
                           </div>
-                        ) : (
-                          <button type="button" className="ghost" onClick={()=>{
-                            setEditingInviteEmail(value.email);
-                            setEditingInviteDept(value.department as 'BEEd'|'BSE'|'BSA'|'Administration');
-                          }}>Edit department</button>
-                        ))}
+                        ):<button type="button" className="ghost" onClick={()=>{setEditingInviteEmail(value.email);setEditingInviteDept(value.department as 'BEEd'|'BSE'|'BSA'|'Administration')}}>Edit department</button>)}
                       </div>
                     </div>
-                  )) : <p>No invitations yet. Add your first faculty email.</p>}
+                  ))}
                 </div>
                 </div>
               )}
