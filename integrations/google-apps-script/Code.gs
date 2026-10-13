@@ -45,16 +45,9 @@ function aisRequest(payload) {
 }
 
 function testAISConnection() {
-  const result = aisRequest({action: 'claim', limit: 1});
-  // WARNING: the claim is temporarily reserved for 20 minutes if there is already a queued notice.
-  // Do not log recipient addresses or message bodies.
-  console.log('Secure AIS connection is working. Messages claimed: ' + (result.items || []).length);
-  if ((result.items || []).length) {
-    // Return test-claimed message to pending so the normal sender may process it immediately.
-    result.items.forEach(function(item) {
-      aisRequest({action:'release', id:item.id, token:item.claim_token});
-    });
-  }
+  const result = aisRequest({action: 'ping'});
+  if (!result.connected) throw new Error('AIS did not confirm the connection.');
+  console.log('Secure AIS mailer connection successful. No queued messages were claimed.');
 }
 
 function sendQueuedAISNotifications() {
